@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Yepsta-inspired palette: clean slate surfaces with violet/fuchsia actions */
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 266 74% 53%;
+    --primary-glow: 322 84% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 252 100% 98%;
+    --secondary-foreground: 266 74% 43%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 252 95% 96%;
+    --accent-foreground: 266 74% 43%;
+
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 266 74% 53%;
+
+    --radius: 0.75rem;
+
+    --gradient-primary: linear-gradient(90deg, hsl(266 74% 53%) 0%, hsl(322 84% 60%) 100%);
+    --gradient-secondary: hsl(var(--secondary));
+    --gradient-hero: hsl(var(--background));
+    --gradient-card: hsl(var(--card));
+
+    --shadow-soft: 0 1px 3px 0 rgb(15 23 42 / 0.08);
+    --shadow-glow: 0 10px 24px -8px rgb(123 45 224 / 0.24);
+    --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.06);
+
+    --transition-smooth: cubic-bezier(0.23, 1, 0.32, 1);
+    --transition-spring: cubic-bezier(0.23, 1, 0.32, 1);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 266 74% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 252 95% 96%;
+    --sidebar-accent-foreground: 266 74% 43%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 266 74% 53%;
+  }
+
+  .dark {
+    --background: 24 10% 6%;
+    --foreground: 40 20% 94%;
+
+    --card: 24 9% 9%;
+    --card-foreground: 40 20% 94%;
+
+    --popover: 24 9% 8%;
+    --popover-foreground: 40 20% 94%;
+
+    --primary: 266 82% 65%;
+    --primary-glow: 322 84% 64%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 24 8% 16%;
+    --secondary-foreground: 40 20% 94%;
+
+    --muted: 24 8% 16%;
+    --muted-foreground: 32 10% 68%;
+
+    --accent: 30 10% 16%;
+    --accent-foreground: 40 28% 88%;
+
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 24 8% 18%;
+    --input: 24 8% 18%;
+    --ring: 266 82% 65%;
+
+    --gradient-card: linear-gradient(180deg, hsl(24 9% 11%) 0%, hsl(24 9% 8%) 100%);
+    --shadow-soft: 0 4px 20px -2px hsl(0 0% 0% / 0.4);
+    --shadow-glow: 0 8px 24px -8px hsl(38 42% 62% / 0.18);
+    --shadow-card: 0 8px 32px -8px hsl(0 0% 0% / 0.45);
+
+    --sidebar-background: 24 10% 7%;
+    --sidebar-foreground: 40 16% 92%;
+    --sidebar-primary: 266 82% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 24 8% 14%;
+    --sidebar-accent-foreground: 40 16% 92%;
+    --sidebar-border: 24 8% 16%;
+    --sidebar-ring: 266 82% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: "Google Sans", "Product Sans", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Google Sans", "Product Sans", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .font-serif {
+    font-family: "Google Sans", "Product Sans", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+/* Public portal skin: visual-only remapping of the existing dark utility palette. */
+@layer utilities {
+  .yepsta-theme {
+    color: hsl(222 47% 11%);
+    background-color: hsl(210 40% 98%);
+    background-image:
+      radial-gradient(circle at 8% 5%, rgb(233 213 255 / 0.65), transparent 32%),
+      radial-gradient(circle at 92% 4%, rgb(207 250 254 / 0.7), transparent 30%);
+  }
+
+  .yepsta-theme .bg-stone-950,
+  .yepsta-theme .bg-stone-950\/60,
+  .yepsta-theme .bg-stone-950\/80,
+  .yepsta-theme .bg-stone-950\/70 {
+    background-color: hsl(210 40% 98%);
+  }
+
+  .yepsta-theme .bg-stone-900,
+  .yepsta-theme .bg-stone-900\/80,
+  .yepsta-theme .bg-stone-900\/90,
+  .yepsta-theme .bg-stone-900\/95 {
+    background-color: rgb(255 255 255 / 0.94);
+  }
+
+  .yepsta-theme .bg-stone-800,
+  .yepsta-theme .bg-stone-800\/80 {
+    background-color: hsl(210 40% 96%);
+  }
+
+  .yepsta-theme .border-stone-800,
+  .yepsta-theme .border-stone-800\/80,
+  .yepsta-theme .border-stone-700,
+  .yepsta-theme .border-stone-700\/50 {
+    border-color: hsl(214 32% 91%);
+  }
+
+  .yepsta-theme .text-white,
+  .yepsta-theme .text-stone-100,
+  .yepsta-theme .text-stone-200 {
+    color: hsl(222 47% 11%);
+  }
+
+  .yepsta-theme .text-stone-300 {
+    color: hsl(215 25% 27%);
+  }
+
+  .yepsta-theme .text-stone-400 {
+    color: hsl(215 16% 47%);
+  }
+
+  .yepsta-theme .text-stone-500,
+  .yepsta-theme .text-stone-600 {
+    color: hsl(215 14% 34%);
+  }
+
+  .yepsta-theme .text-violet-300,
+  .yepsta-theme .text-violet-400 {
+    color: rgb(123 45 224);
+  }
+
+  .yepsta-theme .bg-violet-600,
+  .yepsta-theme .bg-violet-500 {
+    color: white;
+    background-color: rgb(123 45 224);
+  }
+
+  .yepsta-theme header .border-violet-500\/40 {
+    color: rgb(123 45 224);
+    background-color: white;
+    border-color: hsl(214 32% 91%);
+  }
+
+  .yepsta-theme .bg-emerald-600.text-white,
+  .yepsta-theme .bg-blue-600.text-white,
+  .yepsta-theme .bg-rose-600.text-white {
+    color: white;
+  }
+
+  .yepsta-theme .bg-gradient-to-r.from-stone-100,
+  .yepsta-theme .bg-gradient-to-tr.from-stone-200 {
+    color: white;
+    background-image: linear-gradient(90deg, rgb(123 45 224), oklch(66.7% 0.295 322.15));
+  }
+
+  .yepsta-theme .text-neutral-950 {
+    color: white;
+  }
+
+  .yepsta-theme .shadow-purple-950\/30,
+  .yepsta-theme .shadow-purple-950\/40,
+  .yepsta-theme .shadow-violet-500\/30,
+  .yepsta-theme .shadow-violet-600\/25,
+  .yepsta-theme .shadow-violet-600\/30 {
+    --tw-shadow-color: rgb(123 45 224 / 0.2);
+  }
+
+  .yepsta-theme input,
+  .yepsta-theme textarea,
+  .yepsta-theme button,
+  .yepsta-theme [role="dialog"] {
+    font-family: inherit;
+  }
+}

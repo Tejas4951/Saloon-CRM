@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SALONIQ">
+  <rect width="512" height="512" rx="112" fill="#111827"/>
+  <circle cx="256" cy="256" r="152" fill="#7b2de0"/>
+  <path d="M162 293c51 42 137 42 188 0M175 231c23-42 58-64 81-64s58 22 81 64" fill="none" stroke="#fff" stroke-width="34" stroke-linecap="round"/>
+  <path d="M256 112v58M112 256h58M342 256h58" stroke="#f5c451" stroke-width="28" stroke-linecap="round"/>
+</svg>
