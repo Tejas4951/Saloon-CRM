@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="30 seconds">
 
-    <!-- Set absolute log directory -->
-    <property name="LOG_PATH" value="C:/opt/var/log" />
+    <!-- Use LOG_PATH when provided; otherwise keep logs inside the project. -->
+    <springProperty scope="context" name="LOG_PATH" source="LOG_PATH" defaultValue="logs" />
     <property name="LOG_FILE" value="${LOG_PATH}/salon-app.log" />
 
     <!-- Console Appender: logs to terminal -->

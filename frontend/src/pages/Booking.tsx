@@ -9,12 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Calendar, Clock, Star, User, Search, Plus } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import { format } from 'date-fns';
-import { mockEmployees, mockServices } from "@/data/mockData";
 import { StaffAndTimeSelector } from "@/components/StaffAndTimeSelector";
 import { useAppointments } from "@/contexts/AppointmentsContext";
 import type { Appointment } from "@/contexts/AppointmentsContext";
 import { useCustomers } from "@/contexts/CustomersContext";
 import { AddCustomerButton } from "@/components/AddCustomerButton";
+import { useStaff } from '@/contexts/StaffContext';
+import { useServices } from '@/contexts/ServicesContext';
 
 const timeSlots = [
   "9:00 AM", "10:00 AM", "11:00 AM", "12:00 AM", "01:00 PM", "02:00 PM",
@@ -26,6 +27,8 @@ export default function Booking() {
   const navigate = useNavigate();
   const { addAppointment, selectedCustomerId, setSelectedCustomerId } = useAppointments();
   const { customers } = useCustomers();
+  const { employees } = useStaff();
+  const { services } = useServices();
   
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -61,10 +64,10 @@ export default function Booking() {
   ];
 
   const selectedEmployeeData = selectedEmployee 
-    ? mockEmployees.find(e => e.id === selectedEmployee)
+    ? employees.find(e => e.id === selectedEmployee)
     : null;
 
-  const selectedServicesData = mockServices.filter(s => selectedServices.includes(s.id));
+  const selectedServicesData = services.filter(s => selectedServices.includes(s.id));
   const totalDuration = selectedServicesData.reduce((acc, service) => acc + service.duration, 0);
   const totalPrice = selectedServicesData.reduce((acc, service) => acc + service.price, 0);
 
@@ -193,7 +196,7 @@ export default function Booking() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {mockServices.map((service) => (
+                {services.map((service) => (
                   <div
                     key={service.id}
                     onClick={() => handleServiceToggle(service.id)}

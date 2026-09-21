@@ -29,6 +29,8 @@ import { InventoryProvider } from "./contexts/InventoryContext";
 import { NotificationsProvider } from "./contexts/NotificationsContext";
 import { StoreProvider } from "./contexts/StoreContext";
 import PublicPortal from "./pages/PublicPortal";
+import Reports from "./pages/Reports";
+import { ServicesProvider } from "./contexts/ServicesContext";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +107,7 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <ServicesProvider>
             <CustomersProvider>
               <AppointmentsProvider>
                 <TallyProvider>
@@ -207,6 +210,16 @@ const App = () => {
                             <Route path="/index/tally" element={
                               <Navigate to="/tally" replace />
                             } />
+                            <Route path="/reports" element={
+                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                                <Layout><Reports /></Layout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/settings" element={
+                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                                <Layout><Profile /></Layout>
+                              </ProtectedRoute>
+                            } />
                             <Route path="/profile" element={
                               <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'STAFF']}>
                                 <Layout><Profile /></Layout>
@@ -227,6 +240,7 @@ const App = () => {
                 </TallyProvider>
               </AppointmentsProvider>
             </CustomersProvider>
+            </ServicesProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

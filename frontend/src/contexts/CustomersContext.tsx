@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { mockCustomers } from '@/data/mockData';
+import { supabase } from '@/lib/supabase';
+import { createId, getActiveShopId, reportPersistenceError } from '@/services/salonDataService';
 
 export interface Customer {
   id: string;
@@ -15,6 +15,7 @@ export interface Customer {
   preferredServices: string[];
   notes?: string;
   photo: string;
+  createdAt?: string;
 }
 
 interface CustomersContextType {
@@ -28,21 +29,30 @@ interface CustomersContextType {
 const CustomersContext = createContext<CustomersContextType | undefined>(undefined);
 
 export function CustomersProvider({ children }: { children: ReactNode }) {
-  const [customers, setCustomers] = useState<Customer[]>(() => {
-    const saved = localStorage.getItem('salon_customers');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Failed to parse saved customers from localStorage:', e);
-      }
-    }
-    return mockCustomers;
-  });
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
   useEffect(() => {
-    localStorage.setItem('salon_customers', JSON.stringify(customers));
-  }, [customers]);
+    let active = true;
+    const loadCustomers = async () => {
+      try {
+        const shopId = await getActiveShopId();
+        const { data, error } = await supabase.from('customers').select('*').eq('shop_id', shopId).order('created_at', { ascending: false });
+        if (error) throw error;
+        if (!active) return;
+        setCustomers((data || []).map((row: any) => ({
+          id: row.id, name: row.name, phone: row.phone, email: row.email || '', gender: row.gender || 'female',
+          visitCount: row.visit_count || 0, totalSpent: Number(row.total_spent || 0), pendingAmount: Number(row.pending_amount || 0),
+          lastVisit: row.last_visit || row.created_at, preferredServices: row.preferred_services || [], notes: row.notes || '', photo: row.photo || '',
+          createdAt: row.created_at,
+        })));
+      } catch (error) {
+        reportPersistenceError('customers.load', error);
+        if (active) setCustomers([]);
+      }
+    };
+    void loadCustomers();
+    return () => { active = false; };
+  }, []);
 
   const addCustomer = (customerData: Omit<Customer, 'id' | 'visitCount' | 'totalSpent' | 'lastVisit'> & { visitCount?: number; totalSpent?: number }) => {
     let resultCustomer: Customer;
@@ -74,7 +84,7 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
         return copy;
       } else {
         const newCustomer: Customer = {
-          id: uuidv4(),
+          id: createId(),
           name: customerData.name,
           phone: customerData.phone,
           email: customerData.email || '',
@@ -91,6 +101,23 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
         return [newCustomer, ...prev];
       }
     });
+    const persistedCustomer = resultCustomer!;
+    void (async () => {
+      try {
+        const shopId = await getActiveShopId();
+        const payload = {
+          id: persistedCustomer.id, shop_id: shopId, name: persistedCustomer.name, phone: persistedCustomer.phone,
+          email: persistedCustomer.email || null, gender: persistedCustomer.gender, visit_count: persistedCustomer.visitCount,
+          total_spent: persistedCustomer.totalSpent, pending_amount: persistedCustomer.pendingAmount || 0,
+          last_visit: persistedCustomer.lastVisit, preferred_services: persistedCustomer.preferredServices,
+          notes: persistedCustomer.notes || null, photo: persistedCustomer.photo || null, updated_at: new Date().toISOString(),
+        };
+        const { error } = await supabase.from('customers').upsert(payload, { onConflict: 'shop_id,phone' });
+        if (error) throw error;
+      } catch (error) {
+        reportPersistenceError('customers.save', error);
+      }
+    })();
     return resultCustomer!;
   };
 
@@ -100,10 +127,23 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
         customer.id === id ? { ...customer, ...updates } : customer
       )
     );
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const fields: Array<[keyof Customer, string]> = [
+      ['name', 'name'], ['phone', 'phone'], ['email', 'email'], ['gender', 'gender'], ['visitCount', 'visit_count'],
+      ['totalSpent', 'total_spent'], ['pendingAmount', 'pending_amount'], ['lastVisit', 'last_visit'],
+      ['preferredServices', 'preferred_services'], ['notes', 'notes'], ['photo', 'photo'],
+    ];
+    fields.forEach(([source, target]) => { if (updates[source] !== undefined) payload[target] = updates[source]; });
+    void supabase.from('customers').update(payload).eq('id', id).then(({ error }) => {
+      if (error) reportPersistenceError('customers.update', error);
+    });
   };
 
   const deleteCustomer = (id: string) => {
     setCustomers(prev => prev.filter(customer => customer.id !== id));
+    void supabase.from('customers').delete().eq('id', id).then(({ error }) => {
+      if (error) reportPersistenceError('customers.delete', error);
+    });
   };
 
   const addPendingAmount = (idOrPhone: string, amount: number) => {
@@ -116,6 +156,12 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
         return customer;
       })
     );
+    const customer = customers.find(item => item.id === idOrPhone || item.phone === idOrPhone);
+    if (customer) {
+      void supabase.from('customers').update({ pending_amount: (customer.pendingAmount || 0) + amount, updated_at: new Date().toISOString() }).eq('id', customer.id).then(({ error }) => {
+        if (error) reportPersistenceError('customers.pending', error);
+      });
+    }
   };
 
   return (

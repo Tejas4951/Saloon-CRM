@@ -66,7 +66,7 @@ import { useAppointments } from "@/contexts/AppointmentsContext";
 import { useTally } from "@/contexts/TallyContext";
 import { useCustomers } from "@/contexts/CustomersContext";
 import { useStaff } from "@/contexts/StaffContext";
-import { mockCustomers as initialMockCustomers, mockServices, mockTransactions } from "@/data/mockData";
+import { useServices } from '@/contexts/ServicesContext';
 import { cn } from "@/lib/utils";
 
 // Dashboard Widget Sub-components
@@ -153,6 +153,7 @@ const Dashboard = () => {
   const { tallyItems, addTallyItem, updatePaymentStatus } = useTally();
   const { customers, addPendingAmount } = useCustomers();
   const { employees } = useStaff();
+  const { services } = useServices();
   const navigate = useNavigate();
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<{ src: string; alt: string } | null>(null);
@@ -180,6 +181,29 @@ const Dashboard = () => {
     .filter(item => item.date === format(new Date(), 'yyyy-MM-dd') && item.paymentStatus === 'completed')
     .reduce((sum, item) => sum + item.totalCost, 0);
 
+  const todayKey = format(new Date(), 'yyyy-MM-dd');
+  const newCustomersToday = customers.filter(customer => customer.createdAt?.startsWith(todayKey)).length;
+  const pendingItems = tallyItems.filter(item => item.paymentStatus === 'pending');
+  const pendingPayments = pendingItems.reduce((sum, item) => sum + item.totalCost, 0);
+
+  const getPeriodRevenue = (days: number) => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    cutoff.setHours(0, 0, 0, 0);
+    return tallyItems
+      .filter(item => item.paymentStatus === 'completed' && new Date(item.date) >= cutoff)
+      .reduce((sum, item) => sum + item.totalCost, 0);
+  };
+
+  const monthRevenue = tallyItems
+    .filter(item => item.paymentStatus === 'completed' && isSameMonth(new Date(item.date), new Date()) && isSameYear(new Date(item.date), new Date()))
+    .reduce((sum, item) => sum + item.totalCost, 0);
+  const yearRevenue = tallyItems
+    .filter(item => item.paymentStatus === 'completed' && isSameYear(new Date(item.date), new Date()))
+    .reduce((sum, item) => sum + item.totalCost, 0);
+  const returningCustomers = customers.filter(customer => customer.visitCount > 1).length;
+  const retentionRate = customers.length ? Math.round((returningCustomers / customers.length) * 100) : 0;
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
@@ -199,16 +223,22 @@ const Dashboard = () => {
 
   // 7-day revenue & appointments data for ComposedChart
   const getWeeklyComboData = () => {
-    return [
-      { day: '16 Sep', revenue: 35000, appointments: 28 },
-      { day: '17 Sep', revenue: 42000, appointments: 35 },
-      { day: '18 Sep', revenue: 38000, appointments: 30 },
-      { day: '19 Sep', revenue: 52000, appointments: 42 },
-      { day: '20 Sep', revenue: 48000, appointments: 38 },
-      { day: '21 Sep', revenue: 58000, appointments: 45 },
-      { day: '22 Sep', revenue: 38450, appointments: 42 },
-    ];
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - index));
+      const dateKey = format(date, 'yyyy-MM-dd');
+      return {
+        day: format(date, 'dd MMM'),
+        revenue: tallyItems
+          .filter(item => item.date === dateKey && item.paymentStatus === 'completed')
+          .reduce((sum, item) => sum + item.totalCost, 0),
+        appointments: appointments.filter(item => item.date === dateKey && item.status !== 'cancelled').length,
+      };
+    });
   };
+
+  const weeklyComboData = getWeeklyComboData();
+  const weeklyRevenue = weeklyComboData.reduce((sum, item) => sum + item.revenue, 0);
 
   return (
     <div className="space-y-6 pb-12">
@@ -258,11 +288,11 @@ const Dashboard = () => {
               <div>
                 <p className="text-xs font-semibold text-muted-foreground">Today's Revenue</p>
                 <h3 className="text-2xl font-extrabold text-foreground mt-1">
-                  ₹{todaysRevenue ? todaysRevenue.toLocaleString('en-IN') : '38,450'}
+                  ₹{todaysRevenue.toLocaleString('en-IN')}
                 </h3>
                 <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                   <TrendingUp className="h-3.5 w-3.5" />
-                  <span>↑ 12% vs yesterday</span>
+                  <span>Completed payments today</span>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xl shadow-xs">
@@ -279,11 +309,11 @@ const Dashboard = () => {
               <div>
                 <p className="text-xs font-semibold text-muted-foreground">Appointments</p>
                 <h3 className="text-2xl font-extrabold text-foreground mt-1">
-                  {todaysAppointments.length > 0 ? todaysAppointments.length : 42}
+                  {todaysAppointments.length}
                 </h3>
                 <div className="flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400 mt-1">
                   <TrendingUp className="h-3.5 w-3.5" />
-                  <span>↑ 18% vs yesterday</span>
+                  <span>For selected date</span>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shadow-xs">
@@ -299,10 +329,10 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground">New Customers</p>
-                <h3 className="text-2xl font-extrabold text-foreground mt-1">8</h3>
+                <h3 className="text-2xl font-extrabold text-foreground mt-1">{newCustomersToday}</h3>
                 <div className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 mt-1">
                   <TrendingUp className="h-3.5 w-3.5" />
-                  <span>↑ 33% vs yesterday</span>
+                  <span>Added today</span>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-xs">
@@ -318,9 +348,9 @@ const Dashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold text-muted-foreground">Pending Payments</p>
-                <h3 className="text-2xl font-extrabold text-foreground mt-1">₹4,800</h3>
+                <h3 className="text-2xl font-extrabold text-foreground mt-1">₹{pendingPayments.toLocaleString('en-IN')}</h3>
                 <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mt-1">
-                  3 bills pending
+                  {pendingItems.length} {pendingItems.length === 1 ? 'bill' : 'bills'} pending
                 </p>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-xs">
@@ -347,11 +377,11 @@ const Dashboard = () => {
         {showAllStats && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2 pb-4">
             <StatsCard title="Staff" value={`${employees.filter(e => e.available).length}/${employees.length}`} description="Available/Total" icon={<Users className="h-3.5 w-3.5" />} compact={true} />
-            <StatsCard title="Weekly Rev" value="₹10,300" description="Last 7 days" icon={<TrendingUp className="h-3.5 w-3.5" />} compact={true} />
-            <StatsCard title="Monthly Rev" value="₹10,300" description="This month" icon={<TrendingUp className="h-3.5 w-3.5" />} compact={true} />
+            <StatsCard title="Weekly Rev" value={`₹${getPeriodRevenue(7).toLocaleString('en-IN')}`} description="Last 7 days" icon={<TrendingUp className="h-3.5 w-3.5" />} compact={true} />
+            <StatsCard title="Monthly Rev" value={`₹${monthRevenue.toLocaleString('en-IN')}`} description="This month" icon={<TrendingUp className="h-3.5 w-3.5" />} compact={true} />
             <StatsCard title="Weekly Appts" value={appointments.length.toString()} description="Last 7 days" icon={<Calendar className="h-3.5 w-3.5" />} compact={true} />
-            <StatsCard title="Yearly Rev" value="₹10,300" description="This year" icon={<TrendingUp className="h-3.5 w-3.5" />} compact={true} />
-            <StatsCard title="Retention" value="91%" description="21 returning" icon={<Repeat className="h-3.5 w-3.5" />} compact={true} />
+            <StatsCard title="Yearly Rev" value={`₹${yearRevenue.toLocaleString('en-IN')}`} description="This year" icon={<TrendingUp className="h-3.5 w-3.5" />} compact={true} />
+            <StatsCard title="Retention" value={`${retentionRate}%`} description={`${returningCustomers} returning`} icon={<Repeat className="h-3.5 w-3.5" />} compact={true} />
           </div>
         )}
       </div>
@@ -424,7 +454,7 @@ const Dashboard = () => {
                               const customer = customers.find(c => c.id === apt.customerId);
                               const employee = employees.find(e => e.id === apt.employeeId);
                               const serviceNames = apt.serviceIds
-                                .map(id => mockServices.find(s => s.id === id)?.name)
+                                .map(id => services.find(s => s.id === id)?.name)
                                 .filter(Boolean)
                                 .join(', ');
 
@@ -507,13 +537,13 @@ const Dashboard = () => {
                     </div>
                     <div className="text-right">
                       <span className="text-xs text-muted-foreground">Total Revenue</span>
-                      <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">₹2,34,500</p>
+                      <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">₹{weeklyRevenue.toLocaleString('en-IN')}</p>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 pt-2">
                     <div className="h-64 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <ComposedChart data={getWeeklyComboData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <ComposedChart data={weeklyComboData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                           <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                           <XAxis dataKey="day" style={{ fontSize: '11px' }} />
                           <YAxis yAxisId="left" style={{ fontSize: '11px' }} />
@@ -619,8 +649,8 @@ const Dashboard = () => {
                 staffName: employee.name,
                 services: appointment.serviceIds
                   .map(id => ({
-                    name: mockServices.find(s => s.id === id)?.name || 'Unknown Service',
-                    price: mockServices.find(s => s.id === id)?.price || 0
+                    name: services.find(s => s.id === id)?.name || 'Unknown Service',
+                    price: services.find(s => s.id === id)?.price || 0
                   }))
                   .filter(service => service.name !== 'Unknown Service'),
                 totalCost: selectedAppointment.amount,
@@ -657,8 +687,8 @@ const Dashboard = () => {
                   staffName: employee.name,
                   services: appointment.serviceIds
                     .map(id => ({
-                      name: mockServices.find(s => s.id === id)?.name || 'Unknown Service',
-                      price: mockServices.find(s => s.id === id)?.price || 0
+                      name: services.find(s => s.id === id)?.name || 'Unknown Service',
+                      price: services.find(s => s.id === id)?.price || 0
                     }))
                     .filter(service => service.name !== 'Unknown Service'),
                   totalCost: pendingAmt,
@@ -679,8 +709,8 @@ const Dashboard = () => {
                   staffName: employee.name,
                   services: appointment.serviceIds
                     .map(id => ({
-                      name: mockServices.find(s => s.id === id)?.name || 'Unknown Service',
-                      price: mockServices.find(s => s.id === id)?.price || 0
+                      name: services.find(s => s.id === id)?.name || 'Unknown Service',
+                      price: services.find(s => s.id === id)?.price || 0
                     }))
                     .filter(service => service.name !== 'Unknown Service'),
                   totalCost: selectedAppointment.amount,

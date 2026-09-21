@@ -45,7 +45,7 @@ import { useStore, StoreProduct, StoreOrderItem } from '@/contexts/StoreContext'
 import { useAppointments } from '@/contexts/AppointmentsContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useCustomers } from '@/contexts/CustomersContext';
-import { mockServices } from '@/data/mockData';
+import { useServices } from '@/contexts/ServicesContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useSalonLogo } from '@/hooks/useSalonLogo';
@@ -68,6 +68,7 @@ export default function PublicPortal() {
   const { employees } = useStaff();
   const { addCustomer } = useCustomers();
   const { logo } = useSalonLogo();
+  const { services } = useServices();
 
   const [activeTab, setActiveTab] = useState<'booking' | 'store' | 'orders' | 'saved' | 'profile'>('booking');
 
@@ -117,7 +118,7 @@ export default function PublicPortal() {
 
   // --- Booking Wizard Flow States ---
   const [bookingStep, setBookingStep] = useState<1 | 2 | 3>(1);
-  const [selectedServices, setSelectedServices] = useState<string[]>([mockServices[0]?.id || '1']);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(employees[0]?.id || '1');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>('10:00 AM');
   const [bookingDate, setBookingDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -206,7 +207,7 @@ export default function PublicPortal() {
     );
   };
 
-  const selectedServicesData = mockServices.filter(s => selectedServices.includes(s.id));
+  const selectedServicesData = services.filter(s => selectedServices.includes(s.id));
   const totalDuration = selectedServicesData.reduce((acc, s) => acc + s.duration, 0);
   const totalPrice = selectedServicesData.reduce((acc, s) => acc + s.price, 0);
   const selectedEmployeeData = employees.find(e => e.id === selectedEmployeeId);
@@ -376,7 +377,7 @@ export default function PublicPortal() {
     
     // Reset booking wizard state
     setBookingStep(1);
-    setSelectedServices([mockServices[0]?.id || '1']);
+    setSelectedServices(services[0] ? [services[0].id] : []);
     setSelectedTimeSlot('10:00 AM');
     setActiveTab('orders');
   };
@@ -593,7 +594,7 @@ export default function PublicPortal() {
                 </CardHeader>
                 <CardContent className="pt-4 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {mockServices.map((service) => {
+                    {services.map((service) => {
                       const isSelected = selectedServices.includes(service.id);
                       return (
                         <div

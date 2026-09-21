@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
 import { useAppointments } from '@/contexts/AppointmentsContext';
 import { useTally } from '@/contexts/TallyContext';
 import { useStaff } from '@/contexts/StaffContext';
-import { mockServices } from '@/data/mockData';
+import { useServices } from '@/contexts/ServicesContext';
 
 // Detailed Analytics Sub-widgets
 import { StaffPerformanceWidget } from "@/components/dashboard/StaffPerformanceWidget";
@@ -49,6 +49,7 @@ export function AnalyticsTab() {
   const { appointments } = useAppointments();
   const { tallyItems } = useTally();
   const { employees } = useStaff();
+  const { services } = useServices();
 
   // Helper format price
   const formatCurrency = (val: number) => {
@@ -62,22 +63,12 @@ export function AnalyticsTab() {
     if (timeRange === 'Day') {
       // 16 Hourly slots: 9 AM to 12 PM (Midnight)
       const hoursList = [
-        { label: '9 AM', hour: 9, defaultRev: 10300 },
-        { label: '10 AM', hour: 10, defaultRev: 4100 },
-        { label: '11 AM', hour: 11, defaultRev: 12400 },
-        { label: '12 AM', hour: 12, defaultRev: 0 },
-        { label: '1 PM', hour: 13, defaultRev: 6400 },
-        { label: '2 PM', hour: 14, defaultRev: 0 },
-        { label: '3 PM', hour: 15, defaultRev: 5800 },
-        { label: '4 PM', hour: 16, defaultRev: 4300 },
-        { label: '5 PM', hour: 17, defaultRev: 7500 },
-        { label: '6 PM', hour: 18, defaultRev: 7000 },
-        { label: '7 PM', hour: 19, defaultRev: 0 },
-        { label: '8 PM', hour: 20, defaultRev: 0 },
-        { label: '9 PM', hour: 21, defaultRev: 2200 },
-        { label: '10 PM', hour: 22, defaultRev: 0 },
-        { label: '11 PM', hour: 23, defaultRev: 10300 },
-        { label: '12 PM', hour: 24, defaultRev: 0 }
+        { label: '9 AM', hour: 9 }, { label: '10 AM', hour: 10 }, { label: '11 AM', hour: 11 },
+        { label: '12 PM', hour: 12 }, { label: '1 PM', hour: 13 }, { label: '2 PM', hour: 14 },
+        { label: '3 PM', hour: 15 }, { label: '4 PM', hour: 16 }, { label: '5 PM', hour: 17 },
+        { label: '6 PM', hour: 18 }, { label: '7 PM', hour: 19 }, { label: '8 PM', hour: 20 },
+        { label: '9 PM', hour: 21 }, { label: '10 PM', hour: 22 }, { label: '11 PM', hour: 23 },
+        { label: '12 AM', hour: 24 }
       ];
 
       // Calculate actual hourly revenue for selected date
@@ -99,8 +90,7 @@ export function AnalyticsTab() {
           }
         });
 
-        // Use actual revenue if present, else blend default mock for visual richness if no records for exact hour
-        const revenue = dateItems.length > 0 ? actualRev : h.defaultRev;
+        const revenue = actualRev;
 
         return {
           time: h.label,
@@ -113,7 +103,6 @@ export function AnalyticsTab() {
     if (timeRange === 'Week') {
       const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
       const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      const defaultRevs = [18500, 24000, 21500, 31000, 42000, 58000, 49000];
 
       return days.map((dayLabel, idx) => {
         const curDay = addDays(start, idx);
@@ -122,34 +111,38 @@ export function AnalyticsTab() {
           .filter(item => item.date.startsWith(curDayStr) && item.paymentStatus === 'completed')
           .reduce((sum, item) => sum + item.totalCost, 0);
 
-        const finalRev = dayRev > 0 ? dayRev : defaultRevs[idx];
-
         return {
           time: dayLabel,
-          revenue: finalRev,
-          formattedRev: `₹${finalRev.toLocaleString('en-IN')}`
+          revenue: dayRev,
+          formattedRev: `₹${dayRev.toLocaleString('en-IN')}`
         };
       });
     }
 
     if (timeRange === 'Month') {
-      const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-      const defaultRevs = [125000, 142000, 168000, 155000];
-      return weeks.map((wLabel, idx) => ({
-        time: wLabel,
-        revenue: defaultRevs[idx],
-        formattedRev: `₹${defaultRevs[idx].toLocaleString('en-IN')}`
-      }));
+      const monthStart = startOfMonth(selectedDate);
+      const monthEnd = endOfMonth(selectedDate);
+      const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+      return Array.from({ length: Math.ceil(monthDays.length / 7) }, (_, weekIndex) => {
+        const weekDates = monthDays.slice(weekIndex * 7, weekIndex * 7 + 7).map(date => format(date, 'yyyy-MM-dd'));
+        const revenue = tallyItems
+          .filter(item => weekDates.includes(item.date.slice(0, 10)) && item.paymentStatus === 'completed')
+          .reduce((sum, item) => sum + item.totalCost, 0);
+        return { time: `Week ${weekIndex + 1}`, revenue, formattedRev: `₹${revenue.toLocaleString('en-IN')}` };
+      });
     }
 
     // Year
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const defaultRevs = [450000, 480000, 520000, 510000, 590000, 640000, 610000, 680000, 720000, 750000, 810000, 890000];
-    return months.map((mLabel, idx) => ({
-      time: mLabel,
-      revenue: defaultRevs[idx],
-      formattedRev: `₹${defaultRevs[idx].toLocaleString('en-IN')}`
-    }));
+    return months.map((mLabel, idx) => {
+      const revenue = tallyItems
+        .filter(item => {
+          const date = new Date(item.date);
+          return item.paymentStatus === 'completed' && date.getFullYear() === selectedDate.getFullYear() && date.getMonth() === idx;
+        })
+        .reduce((sum, item) => sum + item.totalCost, 0);
+      return { time: mLabel, revenue, formattedRev: `₹${revenue.toLocaleString('en-IN')}` };
+    });
   }, [timeRange, selectedDate, tallyItems]);
 
   // Compute Top Services data
@@ -158,9 +151,9 @@ export function AnalyticsTab() {
 
     appointments.forEach(apt => {
       apt.serviceIds.forEach(id => {
-        const s = mockServices.find(srv => srv.id === id);
-        const sName = s?.name || 'Haircut & Style';
-        const price = s?.price || 500;
+        const s = services.find(srv => srv.id === id);
+        const sName = s?.name || `Service ${id}`;
+        const price = s?.price || 0;
         if (!counts[sName]) {
           counts[sName] = { name: sName, appts: 0, revenue: 0 };
         }
@@ -171,19 +164,8 @@ export function AnalyticsTab() {
 
     const list = Object.values(counts).sort((a, b) => b.appts - a.appts);
 
-    // Provide default fallback list matching image if appointments are empty
-    if (list.length === 0) {
-      return [
-        { name: 'Haircut & Style', appts: 7, revenue: 3500 },
-        { name: 'Facial Treatment', appts: 7, revenue: 17500 },
-        { name: 'Manicure', appts: 7, revenue: 5600 },
-        { name: 'Pedicure', appts: 6, revenue: 6000 },
-        { name: 'Hair Color', appts: 5, revenue: 17500 }
-      ];
-    }
-
     return list.slice(0, 5);
-  }, [appointments]);
+  }, [appointments, services]);
 
   // Compute Top Performers data
   const topPerformersData = useMemo(() => {
@@ -204,16 +186,6 @@ export function AnalyticsTab() {
     });
 
     const list = Object.values(staffMap).sort((a, b) => b.revenue - a.revenue);
-
-    // Provide default rich list if zero transactions
-    if (list.every(item => item.revenue === 0)) {
-      return [
-        { name: 'John Smith', appts: 8, revenue: 51200 },
-        { name: 'Sarah Johnson', appts: 5, revenue: 19100 },
-        { name: 'Mike Brown', appts: 3, revenue: 12400 },
-        { name: 'Sandeep Deshmukh', appts: 2, revenue: 8900 }
-      ];
-    }
 
     return list.slice(0, 4);
   }, [employees, tallyItems]);
@@ -403,6 +375,7 @@ export function AnalyticsTab() {
                 </Badge>
               </div>
             ))}
+            {topServicesData.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">No service data yet</p>}
           </CardContent>
         </Card>
 
@@ -446,6 +419,7 @@ export function AnalyticsTab() {
                 </div>
               );
             })}
+            {topPerformersData.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">No staff performance data yet</p>}
           </CardContent>
         </Card>
       </div>

@@ -28,18 +28,10 @@ import {
   Clock4,
   Check
 } from "lucide-react";
-import { mockCustomers, mockServices as initialMockServices } from "@/data/mockData";
 import { useStaff } from "@/contexts/StaffContext";
 import { useAppointments } from "@/contexts/AppointmentsContext";
-
-type Service = {
-  id: string;
-  name: string;
-  duration: number;
-  price: number;
-  category: string;
-  description: string;
-};
+import { useCustomers } from '@/contexts/CustomersContext';
+import { SalonService as Service, useServices } from '@/contexts/ServicesContext';
 
 const timeSlots = [
   { display: "9-10 AM", start: "9:00 AM" },
@@ -72,7 +64,8 @@ export default function Schedule() {
   const [viewMode, setViewMode] = useState<"day" | "week">("day");
   const [editStaffMode, setEditStaffMode] = useState(false);
   const [editServicesMode, setEditServicesMode] = useState(false);
-  const [services, setServices] = useState<Service[]>(initialMockServices);
+  const { services, addService, updateService, deleteService } = useServices();
+  const { customers } = useCustomers();
   const [newService, setNewService] = useState<Omit<Service, 'id'>>({ 
     name: '', 
     duration: 30, 
@@ -357,7 +350,7 @@ export default function Schedule() {
                                           {slot.display}
                                         </div>
                                         <div className="font-medium truncate">
-                                          {mockCustomers.find(c => c.id === appointment.customerId)?.name}
+                                          {customers.find(c => c.id === appointment.customerId)?.name || 'Customer'}
                                         </div>
                                         <div className="text-xs opacity-90 truncate">
                                           {services.find(s => appointment.serviceIds.includes(s.id))?.name}
@@ -845,18 +838,15 @@ export default function Schedule() {
                       <Button 
                         onClick={() => {
                           if (editingService) {
-                            setServices(services.map(s => 
-                              s.id === editingService.id ? editingService : s
-                            ));
+                            updateService(editingService.id, editingService);
                             setEditingService(null);
                           } else {
                             const newServiceObj = {
                               ...newService,
-                              id: `svc-${Date.now()}`,
                               description: newService.description || `${newService.name} service`,
                               category: 'hair' // Default category
                             };
-                            setServices([...services, newServiceObj]);
+                            addService(newServiceObj);
                             setNewService({ 
                               name: '', 
                               duration: 30, 
@@ -927,7 +917,7 @@ export default function Schedule() {
                             className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                             onClick={() => {
                               if (window.confirm(`Are you sure you want to delete ${service.name}?`)) {
-                                setServices(services.filter(s => s.id !== service.id));
+                                deleteService(service.id);
                                 if (editingService?.id === service.id) {
                                   setEditingService(null);
                                 }

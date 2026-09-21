@@ -32,6 +32,16 @@ create table if not exists public.services (
   created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 
+create table if not exists public.staff_members (
+  id uuid primary key default uuid_generate_v4(),
+  shop_id bigint not null references public.shops(id) on delete cascade,
+  name text not null, role text not null, photo text,
+  available boolean not null default true,
+  specialties text[] not null default '{}', rating numeric(3,2) not null default 0,
+  next_available timestamptz, working_start time default '09:00', working_end time default '18:00',
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now()
+);
+
 create table if not exists public.customers (
   id uuid primary key default uuid_generate_v4(),
   shop_id bigint not null references public.shops(id) on delete cascade,
@@ -56,6 +66,9 @@ create table if not exists public.appointments (
   total numeric(12,2) not null default 0, notes text,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
+
+alter table public.appointments
+  add column if not exists staff_member_id uuid references public.staff_members(id) on delete set null;
 
 create table if not exists public.inventory_items (
   id uuid primary key default uuid_generate_v4(),
@@ -130,6 +143,7 @@ create index if not exists orders_shop_created_idx on public.store_orders(shop_i
 alter table public.shops enable row level security;
 alter table public.profiles enable row level security;
 alter table public.services enable row level security;
+alter table public.staff_members enable row level security;
 alter table public.customers enable row level security;
 alter table public.appointments enable row level security;
 alter table public.inventory_items enable row level security;
@@ -141,7 +155,7 @@ alter table public.tally_items enable row level security;
 alter table public.expenses enable row level security;
 
 do $$ declare t text; begin
-  foreach t in array array['shops','profiles','services','customers','appointments','inventory_items','inventory_in_use','store_products','store_orders','store_order_items','tally_items','expenses'] loop
+  foreach t in array array['shops','profiles','services','staff_members','customers','appointments','inventory_items','inventory_in_use','store_products','store_orders','store_order_items','tally_items','expenses'] loop
     if not exists (select 1 from pg_policies where schemaname='public' and tablename=t and policyname='authenticated_manage') then
       execute format('create policy authenticated_manage on public.%I for all to authenticated using (true) with check (true)', t);
     end if;
@@ -151,6 +165,7 @@ end $$;
 do $$ begin
   if not exists (select 1 from pg_policies where schemaname='public' and tablename='shops' and policyname='public_read_shops') then create policy public_read_shops on public.shops for select to anon using (true); end if;
   if not exists (select 1 from pg_policies where schemaname='public' and tablename='services' and policyname='public_read_services') then create policy public_read_services on public.services for select to anon using (is_active = true); end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='staff_members' and policyname='public_read_available_staff') then create policy public_read_available_staff on public.staff_members for select to anon using (available = true); end if;
   if not exists (select 1 from pg_policies where schemaname='public' and tablename='store_products' and policyname='public_read_store_products') then create policy public_read_store_products on public.store_products for select to anon using (status = 'active'); end if;
   if not exists (select 1 from pg_policies where schemaname='public' and tablename='customers' and policyname='public_create_customers') then create policy public_create_customers on public.customers for insert to anon with check (true); end if;
   if not exists (select 1 from pg_policies where schemaname='public' and tablename='appointments' and policyname='public_create_appointments') then create policy public_create_appointments on public.appointments for insert to anon with check (true); end if;

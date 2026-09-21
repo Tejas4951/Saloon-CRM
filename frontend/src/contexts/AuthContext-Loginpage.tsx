@@ -182,9 +182,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             timestamp: new Date().toISOString(),
           };
         }
+
       }
 
-      // 2. Fallback / Mock Login (Allows running immediately via npm run dev)
+      // Demo fallback: any email/password can enter the local demo as an admin.
       let role: 'SUPER_ADMIN' | 'ADMIN' | 'STAFF' = 'ADMIN';
       if (userName.toLowerCase().includes('super') || userName.toLowerCase().includes('owner')) {
         role = 'SUPER_ADMIN';

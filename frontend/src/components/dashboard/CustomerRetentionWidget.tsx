@@ -1,10 +1,20 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, RotateCw, Calendar, ArrowRight, Sparkles } from 'lucide-react';
-import { mockCustomerRetention } from '@/data/mockData';
+import { useCustomers } from '@/contexts/CustomersContext';
 
 export const CustomerRetentionWidget: React.FC = () => {
-  const { repeatRate, totalCustomers, returningCustomers, avgVisitIntervalDays, insight } = mockCustomerRetention;
+  const { customers } = useCustomers();
+  const totalCustomers = customers.length;
+  const returningCustomers = customers.filter(customer => customer.visitCount > 1).length;
+  const repeatRate = totalCustomers ? Math.round((returningCustomers / totalCustomers) * 100) : 0;
+  const customersWithVisits = customers.filter(customer => customer.visitCount > 0);
+  const avgVisitIntervalDays = customersWithVisits.length
+    ? Math.round(customersWithVisits.reduce((sum, customer) => sum + Math.max(1, 365 / customer.visitCount), 0) / customersWithVisits.length)
+    : 0;
+  const insight = totalCustomers
+    ? `${returningCustomers} of ${totalCustomers} customers have returned for another visit.`
+    : 'Customer retention will appear after real customer visits are recorded.';
   
   // Calculate SVG donut circumference for 68%
   const radius = 40;

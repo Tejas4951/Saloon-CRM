@@ -11,7 +11,8 @@ import { cn } from '@/lib/utils';
 import { useAppointments } from '@/contexts/AppointmentsContext';
 import { useTally } from '@/contexts/TallyContext';
 import { useStaff } from '@/contexts/StaffContext';
-import { mockServices, mockCustomers } from '@/data/mockData';
+import { useServices } from '@/contexts/ServicesContext';
+import { useCustomers } from '@/contexts/CustomersContext';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -46,7 +47,8 @@ export function DownloadDataTab() {
   const { appointments } = useAppointments();
   const { tallyItems } = useTally();
   const { employees } = useStaff();
-  const services = mockServices;
+  const { services } = useServices();
+  const { customers } = useCustomers();
   
   // Time slots for the schedule - matching the Schedule page format
   const timeSlots = [
@@ -173,9 +175,9 @@ export function DownloadDataTab() {
     const bookedServices = filteredAppointments.flatMap(appt => 
       appt.serviceIds.map(id => ({
         id,
-        name: mockServices.find(s => s.id === id)?.name || 'Unknown Service',
-        price: mockServices.find(s => s.id === id)?.price || 0,
-        duration: mockServices.find(s => s.id === id)?.duration || 0
+        name: services.find(s => s.id === id)?.name || 'Unknown Service',
+        price: services.find(s => s.id === id)?.price || 0,
+        duration: services.find(s => s.id === id)?.duration || 0
       }))
     );
     
@@ -288,7 +290,7 @@ export function DownloadDataTab() {
     Object.entries(appointmentsByHour).forEach(([timeKey, {timeRange, appointments: slotApps}]) => {
       const slotAppointments = slotApps.map(appt => {
         // Find customer details
-        const customer = mockCustomers.find(c => c.id === appt.customerId);
+        const customer = customers.find(c => c.id === appt.customerId);
         const customerName = customer?.name || `Customer ${appt.customerId?.substring(0, 4) || 'N/A'}`;
         
         // Format the appointment time safely
@@ -296,7 +298,7 @@ export function DownloadDataTab() {
         
         // Get service names
         const serviceNames = appt.serviceIds
-          .map(id => mockServices.find(s => s.id === id)?.name || 'Unknown Service')
+          .map(id => services.find(s => s.id === id)?.name || 'Unknown Service')
           .join(', ');
         
         // Get staff name
@@ -1195,7 +1197,7 @@ export function DownloadDataTab() {
                                             {slot.display}
                                           </div>
                                           <div className="font-medium truncate">
-                                            {mockCustomers.find(c => c.id === appointment.customerId)?.name || 'Unknown Customer'}
+                                            {customers.find(c => c.id === appointment.customerId)?.name || 'Unknown Customer'}
                                           </div>
                                           <div className="text-xs opacity-90 truncate">
                                             {appointment.serviceIds.map(id => 

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Customer } from '@/contexts/CustomersContext';
 import { useTally } from '@/contexts/TallyContext';
 import { useAppointments } from '@/contexts/AppointmentsContext';
-import { mockServices, TallyItem } from '@/data/mockData';
+import { TallyItem } from '@/data/mockData';
 import { Phone, Mail, Calendar, Clock, DollarSign, AlertCircle, CheckCircle2, User, Star, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 

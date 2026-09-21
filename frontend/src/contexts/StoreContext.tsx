@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { mockProducts } from '@/data/mockData';
+import { supabase } from '@/lib/supabase';
+import { createId, getActiveShopId, reportPersistenceError } from '@/services/salonDataService';
 
 export interface StoreProduct {
   id: string;
@@ -169,46 +171,92 @@ const initialOrdersData: StoreOrder[] = [
 ];
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<StoreProduct[]>(() => {
-    const saved = localStorage.getItem('salon_store_products');
-    return saved ? JSON.parse(saved) : initialStoreProducts;
-  });
-
-  const [orders, setOrders] = useState<StoreOrder[]>(() => {
-    const saved = localStorage.getItem('salon_store_orders');
-    return saved ? JSON.parse(saved) : initialOrdersData;
-  });
+  const [products, setProducts] = useState<StoreProduct[]>([]);
+  const [orders, setOrders] = useState<StoreOrder[]>([]);
 
   useEffect(() => {
-    localStorage.setItem('salon_store_products', JSON.stringify(products));
-  }, [products]);
-
-  useEffect(() => {
-    localStorage.setItem('salon_store_orders', JSON.stringify(orders));
-  }, [orders]);
+    let active = true;
+    void (async () => {
+      try {
+        const shopId = await getActiveShopId();
+        const [{ data: productRows, error: productError }, { data: orderRows, error: orderError }] = await Promise.all([
+          supabase.from('store_products').select('*').eq('shop_id', shopId).order('created_at', { ascending: false }),
+          supabase.from('store_orders').select('*, store_order_items(*)').eq('shop_id', shopId).order('created_at', { ascending: false }),
+        ]);
+        if (productError) throw productError;
+        if (orderError) throw orderError;
+        if (!active) return;
+        setProducts((productRows || []).map((row: any) => ({
+          id: row.id, name: row.name, category: row.category || '', brand: row.brand || '', price: Number(row.price || 0),
+          stock: row.stock || 0, image: row.image || '', description: row.description || '', status: row.status,
+          createdDate: row.created_at?.split('T')[0],
+        })));
+        setOrders((orderRows || []).map((row: any) => ({
+          id: row.id, orderNumber: row.order_number, customerName: row.customer_name, customerPhone: row.customer_phone,
+          deliveryType: row.delivery_type, address: row.address || undefined,
+          items: (row.store_order_items || []).map((item: any) => ({
+            productId: item.product_id || '', productName: item.product_name, productImage: item.product_image || '',
+            price: Number(item.price || 0), quantity: item.quantity,
+          })),
+          totalAmount: Number(row.total_amount || 0), paymentMethod: row.payment_method, paymentStatus: row.payment_status,
+          orderStatus: row.order_status, orderDate: row.created_at?.split('T')[0], notes: row.notes || undefined,
+        })));
+      } catch (error) {
+        reportPersistenceError('store.load', error);
+        if (active) { setProducts([]); setOrders([]); }
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const addProduct = (product: Omit<StoreProduct, 'id' | 'createdDate'>) => {
     const newProduct: StoreProduct = {
       ...product,
-      id: `sp-${Date.now()}`,
+      id: createId(),
       createdDate: new Date().toISOString().split('T')[0]
     };
     setProducts(prev => [newProduct, ...prev]);
+    void (async () => {
+      try {
+        const shopId = await getActiveShopId();
+        const { error } = await supabase.from('store_products').insert({
+          id: newProduct.id, shop_id: shopId, name: newProduct.name, category: newProduct.category,
+          brand: newProduct.brand, price: newProduct.price, stock: newProduct.stock, image: newProduct.image,
+          description: newProduct.description, status: newProduct.status,
+        });
+        if (error) throw error;
+      } catch (error) {
+        reportPersistenceError('store.product.add', error);
+        setProducts(prev => prev.filter(product => product.id !== newProduct.id));
+      }
+    })();
   };
 
   const updateProduct = (id: string, updates: Partial<StoreProduct>) => {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const fields: Array<[keyof StoreProduct, string]> = [
+      ['name', 'name'], ['category', 'category'], ['brand', 'brand'], ['price', 'price'], ['stock', 'stock'],
+      ['image', 'image'], ['description', 'description'], ['status', 'status'],
+    ];
+    fields.forEach(([source, target]) => { if (updates[source] !== undefined) payload[target] = updates[source]; });
+    void supabase.from('store_products').update(payload).eq('id', id).then(({ error }) => {
+      if (error) reportPersistenceError('store.product.update', error);
+    });
   };
 
   const deleteProduct = (id: string) => {
     setProducts(prev => prev.filter(p => p.id !== id));
+    void supabase.from('store_products').delete().eq('id', id).then(({ error }) => {
+      if (error) reportPersistenceError('store.product.delete', error);
+    });
   };
 
   // Public customer places order -> deducts stock & creates order in Admin Panel
   const placeOrder = (orderData: Omit<StoreOrder, 'id' | 'orderNumber' | 'orderDate'>): StoreOrder => {
     const newOrder: StoreOrder = {
       ...orderData,
-      id: `ord-${Date.now()}`,
+      id: createId(),
       orderNumber: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
       orderDate: new Date().toISOString().split('T')[0]
     };
@@ -228,6 +276,32 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }));
 
     setOrders(prev => [newOrder, ...prev]);
+    void (async () => {
+      try {
+        const shopId = await getActiveShopId();
+        const { error: orderError } = await supabase.from('store_orders').insert({
+          id: newOrder.id, shop_id: shopId, order_number: newOrder.orderNumber, customer_name: newOrder.customerName,
+          customer_phone: newOrder.customerPhone, delivery_type: newOrder.deliveryType, address: newOrder.address || null,
+          total_amount: newOrder.totalAmount, payment_method: newOrder.paymentMethod, payment_status: newOrder.paymentStatus,
+          order_status: newOrder.orderStatus, notes: newOrder.notes || null,
+        });
+        if (orderError) throw orderError;
+        const { error: itemsError } = await supabase.from('store_order_items').insert(newOrder.items.map(item => ({
+          id: createId(), order_id: newOrder.id, product_id: item.productId || null, product_name: item.productName,
+          product_image: item.productImage || null, price: item.price, quantity: item.quantity,
+        })));
+        if (itemsError) throw itemsError;
+        await Promise.all(newOrder.items.map(item => {
+          const product = products.find(entry => entry.id === item.productId);
+          if (!product) return Promise.resolve();
+          const stock = Math.max(0, product.stock - item.quantity);
+          return supabase.from('store_products').update({ stock, status: stock === 0 ? 'out_of_stock' : product.status, updated_at: new Date().toISOString() }).eq('id', product.id);
+        }));
+      } catch (error) {
+        reportPersistenceError('store.order.add', error);
+        setOrders(prev => prev.filter(order => order.id !== newOrder.id));
+      }
+    })();
     return newOrder;
   };
 
@@ -242,6 +316,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
       return ord;
     }));
+    void supabase.from('store_orders').update({
+      order_status: status, payment_status: status === 'completed' ? 'completed' : undefined, updated_at: new Date().toISOString(),
+    }).eq('id', orderId).then(({ error }) => {
+      if (error) reportPersistenceError('store.order.update', error);
+    });
   };
 
   return (

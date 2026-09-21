@@ -1,9 +1,30 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, BarChart } from 'lucide-react';
-import { mockBusinessSummary } from '@/data/mockData';
+import { BarChart } from 'lucide-react';
+import { useAppointments } from '@/contexts/AppointmentsContext';
+import { useCustomers } from '@/contexts/CustomersContext';
+import { useTally } from '@/contexts/TallyContext';
 
 export const BusinessSummaryWidget: React.FC = () => {
+  const { appointments } = useAppointments();
+  const { customers } = useCustomers();
+  const { tallyItems } = useTally();
+  const now = new Date();
+  const isCurrentMonth = (value: string) => {
+    const date = new Date(value);
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  };
+  const monthlyAppointments = appointments.filter(item => isCurrentMonth(item.date));
+  const monthlyPayments = tallyItems.filter(item => item.paymentStatus === 'completed' && isCurrentMonth(item.date));
+  const monthlyRevenue = monthlyPayments.reduce((sum, item) => sum + item.totalCost, 0);
+  const averageBill = monthlyPayments.length ? Math.round(monthlyRevenue / monthlyPayments.length) : 0;
+  const summary = [
+    { id: 'customers', label: 'Total Customers', value: customers.length.toLocaleString('en-IN') },
+    { id: 'appointments', label: 'Appointments (This Month)', value: monthlyAppointments.length.toLocaleString('en-IN') },
+    { id: 'revenue', label: 'Revenue (This Month)', value: `₹${monthlyRevenue.toLocaleString('en-IN')}` },
+    { id: 'average', label: 'Average Bill Value', value: `₹${averageBill.toLocaleString('en-IN')}` },
+  ];
+
   return (
     <Card className="border-border/60 shadow-sm">
       <CardHeader className="p-4 pb-2">
@@ -14,7 +35,7 @@ export const BusinessSummaryWidget: React.FC = () => {
       </CardHeader>
       <CardContent className="p-4 pt-2">
         <div className="space-y-3">
-          {mockBusinessSummary.map((item) => (
+          {summary.map((item) => (
             <div
               key={item.id}
               className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0 text-xs"
@@ -22,9 +43,6 @@ export const BusinessSummaryWidget: React.FC = () => {
               <span className="text-muted-foreground font-medium">{item.label}</span>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-foreground">{item.value}</span>
-                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
-                  {item.growth}
-                </span>
               </div>
             </div>
           ))}

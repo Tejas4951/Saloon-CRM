@@ -34,3 +34,6 @@ build/
 
 # Local credentials
 .env
+
+# Local runtime logs
+logs/

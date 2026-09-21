@@ -1,9 +1,25 @@
 import React from 'react';
 import { ArrowRight, UserCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { mockStaffPerformance } from '@/data/mockData';
+import { useStaff } from '@/contexts/StaffContext';
+import { useTally } from '@/contexts/TallyContext';
 
 export const StaffPerformanceWidget: React.FC = () => {
+  const { employees } = useStaff();
+  const { tallyItems } = useTally();
+  const staffPerformance = employees.map(employee => {
+    const entries = tallyItems.filter(item => item.staffName === employee.name && item.paymentStatus === 'completed');
+    const revenue = entries.reduce((sum, item) => sum + item.totalCost, 0);
+    return {
+      id: employee.id,
+      name: employee.name,
+      initials: employee.name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase(),
+      servicesCount: entries.reduce((sum, item) => sum + item.services.length, 0),
+      revenue,
+      commission: Math.round(revenue * 0.2),
+    };
+  }).sort((a, b) => b.revenue - a.revenue);
+
   return (
     <Card className="border-border/60 shadow-sm">
       <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
@@ -27,7 +43,7 @@ export const StaffPerformanceWidget: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              {mockStaffPerformance.map((staff) => (
+              {staffPerformance.map((staff) => (
                 <tr key={staff.id} className="hover:bg-muted/40 transition-colors">
                   <td className="py-2.5 px-2 font-medium flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] flex items-center justify-center shrink-0">
@@ -46,6 +62,9 @@ export const StaffPerformanceWidget: React.FC = () => {
                   </td>
                 </tr>
               ))}
+              {staffPerformance.length === 0 && (
+                <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">No staff records yet</td></tr>
+              )}
             </tbody>
           </table>
         </div>

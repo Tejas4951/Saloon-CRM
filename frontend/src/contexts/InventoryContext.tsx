@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { mockProducts } from '@/data/mockData';
+import { supabase } from '@/lib/supabase';
+import { createId, getActiveShopId, reportPersistenceError } from '@/services/salonDataService';
 
 export interface InventoryItem {
   id: string;
@@ -144,32 +146,60 @@ const initialInUseRecordsData: InUseRecord[] = [
 ];
 
 export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<InventoryItem[]>(() => {
-    const saved = localStorage.getItem('salon_inventory_items');
-    return saved ? JSON.parse(saved) : initialInventoryData;
-  });
-
-  const [inUseRecords, setInUseRecords] = useState<InUseRecord[]>(() => {
-    const saved = localStorage.getItem('salon_inventory_in_use');
-    return saved ? JSON.parse(saved) : initialInUseRecordsData;
-  });
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [inUseRecords, setInUseRecords] = useState<InUseRecord[]>([]);
 
   useEffect(() => {
-    localStorage.setItem('salon_inventory_items', JSON.stringify(items));
-  }, [items]);
-
-  useEffect(() => {
-    localStorage.setItem('salon_inventory_in_use', JSON.stringify(inUseRecords));
-  }, [inUseRecords]);
+    let active = true;
+    void (async () => {
+      try {
+        const shopId = await getActiveShopId();
+        const [{ data: itemRows, error: itemError }, { data: usageRows, error: usageError }] = await Promise.all([
+          supabase.from('inventory_items').select('*').eq('shop_id', shopId).order('created_at', { ascending: false }),
+          supabase.from('inventory_in_use').select('*, inventory_items!inner(name, image, shop_id)').eq('inventory_items.shop_id', shopId).order('created_at', { ascending: false }),
+        ]);
+        if (itemError) throw itemError;
+        if (usageError) throw usageError;
+        if (!active) return;
+        setItems((itemRows || []).map((row: any) => ({
+          id: row.id, name: row.name, category: row.category || '', brand: row.brand || '', stock: row.stock || 0,
+          inUseStock: row.in_use_stock || 0, minThreshold: row.min_threshold || 0, price: Number(row.price || 0),
+          image: row.image || '', description: row.description || '', lastUpdated: row.updated_at?.split('T')[0],
+        })));
+        setInUseRecords((usageRows || []).map((row: any) => ({
+          id: row.id, itemId: row.item_id, itemName: row.inventory_items?.name || '', itemImage: row.inventory_items?.image || '',
+          quantity: row.quantity, assignedStation: row.assigned_station || '', openedDate: row.opened_date, notes: row.notes || '',
+        })));
+      } catch (error) {
+        reportPersistenceError('inventory.load', error);
+        if (active) { setItems([]); setInUseRecords([]); }
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   const addItem = (newItem: Omit<InventoryItem, 'id' | 'inUseStock' | 'lastUpdated'>) => {
     const createdItem: InventoryItem = {
       ...newItem,
-      id: Date.now().toString(),
+      id: createId(),
       inUseStock: 0,
       lastUpdated: new Date().toISOString().split('T')[0]
     };
     setItems(prev => [createdItem, ...prev]);
+    void (async () => {
+      try {
+        const shopId = await getActiveShopId();
+        const { error } = await supabase.from('inventory_items').insert({
+          id: createdItem.id, shop_id: shopId, name: createdItem.name, category: createdItem.category,
+          brand: createdItem.brand, stock: createdItem.stock, in_use_stock: 0, min_threshold: createdItem.minThreshold,
+          price: createdItem.price, image: createdItem.image, description: createdItem.description || null,
+        });
+        if (error) throw error;
+      } catch (error) {
+        reportPersistenceError('inventory.add', error);
+        setItems(prev => prev.filter(item => item.id !== createdItem.id));
+      }
+    })();
   };
 
   const updateItem = (id: string, updates: Partial<InventoryItem>) => {
@@ -182,11 +212,23 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         itemImage: updates.image || rec.itemImage
       } : rec));
     }
+    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const fields: Array<[keyof InventoryItem, string]> = [
+      ['name', 'name'], ['category', 'category'], ['brand', 'brand'], ['stock', 'stock'], ['inUseStock', 'in_use_stock'],
+      ['minThreshold', 'min_threshold'], ['price', 'price'], ['image', 'image'], ['description', 'description'],
+    ];
+    fields.forEach(([source, target]) => { if (updates[source] !== undefined) payload[target] = updates[source]; });
+    void supabase.from('inventory_items').update(payload).eq('id', id).then(({ error }) => {
+      if (error) reportPersistenceError('inventory.update', error);
+    });
   };
 
   const deleteItem = (id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
     setInUseRecords(prev => prev.filter(rec => rec.itemId !== id));
+    void supabase.from('inventory_items').delete().eq('id', id).then(({ error }) => {
+      if (error) reportPersistenceError('inventory.delete', error);
+    });
   };
 
   // Move product quantity to "In Used" section (automatically updates available stock)
@@ -210,23 +252,41 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     }));
 
     // 2. Add or merge into In-Use Records
+    const stationName = station || 'General Station';
+    const existingRec = inUseRecords.find(r => r.itemId === itemId && r.assignedStation === stationName);
+    let recordToPersist: InUseRecord;
     setInUseRecords(prev => {
-      const existingRec = prev.find(r => r.itemId === itemId && r.assignedStation === (station || 'General Station'));
       if (existingRec) {
-        return prev.map(r => r.id === existingRec.id ? { ...r, quantity: r.quantity + actualQty, notes: notes || r.notes } : r);
+        recordToPersist = { ...existingRec, quantity: existingRec.quantity + actualQty, notes: notes || existingRec.notes };
+        return prev.map(r => r.id === existingRec.id ? recordToPersist : r);
       }
       const newRecord: InUseRecord = {
-        id: `inuse-${Date.now()}`,
+        id: createId(),
         itemId,
         itemName: targetItem.name,
         itemImage: targetItem.image,
         quantity: actualQty,
-        assignedStation: station || 'General Station',
+        assignedStation: stationName,
         openedDate: new Date().toISOString().split('T')[0],
         notes: notes || 'Opened for salon workstation use'
       };
+      recordToPersist = newRecord;
       return [newRecord, ...prev];
     });
+    void (async () => {
+      const itemUpdate = supabase.from('inventory_items').update({
+        stock: Math.max(0, targetItem.stock - actualQty), in_use_stock: targetItem.inUseStock + actualQty, updated_at: new Date().toISOString(),
+      }).eq('id', itemId);
+      const usageUpdate = existingRec
+        ? supabase.from('inventory_in_use').update({ quantity: existingRec.quantity + actualQty, notes: notes || existingRec.notes || null }).eq('id', existingRec.id)
+        : supabase.from('inventory_in_use').insert({
+            id: recordToPersist!.id, item_id: itemId, quantity: actualQty, assigned_station: stationName,
+            opened_date: recordToPersist!.openedDate, notes: recordToPersist!.notes || null,
+          });
+      const [itemResult, usageResult] = await Promise.all([itemUpdate, usageUpdate]);
+      if (itemResult.error) reportPersistenceError('inventory.move.item', itemResult.error);
+      if (usageResult.error) reportPersistenceError('inventory.move.record', usageResult.error);
+    })();
   };
 
   // Return unused product back to main stock
@@ -255,6 +315,16 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     } else {
       setInUseRecords(prev => prev.map(r => r.id === recordId ? { ...r, quantity: r.quantity - qty } : r));
     }
+    const item = items.find(entry => entry.id === record.itemId);
+    if (item) {
+      void supabase.from('inventory_items').update({
+        stock: item.stock + qty, in_use_stock: Math.max(0, item.inUseStock - qty), updated_at: new Date().toISOString(),
+      }).eq('id', item.id).then(({ error }) => { if (error) reportPersistenceError('inventory.return.item', error); });
+    }
+    const usageRequest = qty >= record.quantity
+      ? supabase.from('inventory_in_use').delete().eq('id', recordId)
+      : supabase.from('inventory_in_use').update({ quantity: record.quantity - qty }).eq('id', recordId);
+    void usageRequest.then(({ error }) => { if (error) reportPersistenceError('inventory.return.record', error); });
   };
 
   // Mark in-use item as completely consumed / empty
@@ -275,6 +345,15 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     }));
 
     setInUseRecords(prev => prev.filter(r => r.id !== recordId));
+    const item = items.find(entry => entry.id === record.itemId);
+    if (item) {
+      void supabase.from('inventory_items').update({
+        in_use_stock: Math.max(0, item.inUseStock - record.quantity), updated_at: new Date().toISOString(),
+      }).eq('id', item.id).then(({ error }) => { if (error) reportPersistenceError('inventory.finish.item', error); });
+    }
+    void supabase.from('inventory_in_use').delete().eq('id', recordId).then(({ error }) => {
+      if (error) reportPersistenceError('inventory.finish.record', error);
+    });
   };
 
   return (
