@@ -21,7 +21,7 @@ export const StaffPerformanceWidget: React.FC = () => {
   }).sort((a, b) => b.revenue - a.revenue);
 
   return (
-    <Card className="border-border/60 shadow-sm">
+    <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md">
       <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <UserCheck className="h-4 w-4 text-emerald-500" />
@@ -35,14 +35,14 @@ export const StaffPerformanceWidget: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
             <thead>
-              <tr className="border-b text-muted-foreground font-medium">
-                <th className="py-2.5 px-2 font-medium">Staff</th>
-                <th className="py-2.5 px-2 text-center font-medium">Services</th>
-                <th className="py-2.5 px-2 text-right font-medium">Revenue</th>
-                <th className="py-2.5 px-2 text-right font-medium">Commission</th>
+              <tr className="border-b-2 border-slate-300 dark:border-slate-700 text-foreground font-bold">
+                <th className="py-2.5 px-2">Staff</th>
+                <th className="py-2.5 px-2 text-center">Services</th>
+                <th className="py-2.5 px-2 text-right">Revenue</th>
+                <th className="py-2.5 px-2 text-right">Commission</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {staffPerformance.map((staff) => (
                 <tr key={staff.id} className="hover:bg-muted/40 transition-colors">
                   <td className="py-2.5 px-2 font-medium flex items-center gap-2">

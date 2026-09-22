@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { createId, getActiveShopId, isUuid, reportPersistenceError, toDatabaseTime, toDisplayTime } from '@/services/salonDataService';
 
 export interface Appointment {
@@ -12,6 +12,7 @@ export interface Appointment {
   status: 'scheduled' | 'completed' | 'cancelled';
   total: number;
   notes: string;
+  createdAt?: string;
 }
 
 interface AppointmentsContextType {
@@ -25,10 +26,26 @@ interface AppointmentsContextType {
 const AppointmentsContext = createContext<AppointmentsContextType | undefined>(undefined);
 
 export function AppointmentsProvider({ children }: { children: ReactNode }) {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>(() => {
+    const saved = localStorage.getItem('saloniq_appointments');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'apt-demo-1',
+        customerId: 'cust-demo-1',
+        employeeId: '1',
+        serviceIds: ['1'],
+        date: new Date().toISOString().split('T')[0],
+        time: '10:00 AM',
+        status: 'scheduled',
+        total: 500,
+        notes: 'Public Booking: Ananya Gupta (+91 98765 43210)'
+      }
+    ];
+  });
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
     let active = true;
     const loadAppointments = async () => {
       try {
@@ -41,7 +58,7 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
           .order('appointment_time', { ascending: true });
         if (error) throw error;
         if (!active) return;
-        setAppointments((data || []).map((row: any) => ({
+        const fetched = (data || []).map((row: any) => ({
           id: row.id,
           customerId: row.customer_id || '',
           employeeId: row.staff_member_id || row.employee_id || row.employee_name || '',
@@ -51,10 +68,11 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
           status: row.status === 'in_progress' ? 'scheduled' : row.status,
           total: Number(row.total || 0),
           notes: row.notes || '',
-        })));
+        }));
+        setAppointments(fetched);
+        localStorage.setItem('saloniq_appointments', JSON.stringify(fetched));
       } catch (error) {
         reportPersistenceError('appointments.load', error);
-        if (active) setAppointments([]);
       }
     };
     void loadAppointments();
@@ -62,8 +80,19 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addAppointment = (newAppointment: Appointment) => {
-    const appointment = { ...newAppointment, id: isUuid(newAppointment.id) ? newAppointment.id : createId() };
-    setAppointments(prev => [...prev, appointment]);
+    const appointment = { 
+      ...newAppointment, 
+      id: isUuid(newAppointment.id) ? newAppointment.id : createId(),
+      createdAt: newAppointment.createdAt || new Date().toISOString()
+    };
+    setAppointments(prev => {
+      const updated = [appointment, ...prev];
+      localStorage.setItem('saloniq_appointments', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (!isSupabaseConfigured || !supabase) return;
+
     void (async () => {
       try {
         const shopId = await getActiveShopId();
@@ -79,12 +108,15 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
         const serviceNames = appointment.serviceIds.map(id =>
           dbServices?.find((item: any) => String(item.id) === id)?.service_name || id
         );
+        const notesName = appointment.notes?.match(/Public Booking:\s*([^(]+)/)?.[1]?.trim();
+        const notesPhone = appointment.notes?.match(/\(([^)]+)\)/)?.[1]?.trim();
+
         const { error } = await supabase.from('appointments').insert({
           id: appointment.id,
           shop_id: shopId,
           customer_id: isUuid(appointment.customerId) ? appointment.customerId : null,
-          customer_name: customer?.name || 'Walk-in Customer',
-          customer_phone: customer?.phone || null,
+          customer_name: customer?.name || notesName || 'Walk-in Customer',
+          customer_phone: customer?.phone || notesPhone || null,
           staff_member_id: isUuid(appointment.employeeId) ? appointment.employeeId : null,
           employee_id: null,
           employee_name: staffMember?.name || appointment.employeeId || null,
@@ -99,17 +131,19 @@ export function AppointmentsProvider({ children }: { children: ReactNode }) {
         if (error) throw error;
       } catch (error) {
         reportPersistenceError('appointments.add', error);
-        setAppointments(prev => prev.filter(item => item.id !== appointment.id));
       }
     })();
   };
 
   const updateAppointment = (id: string, updates: Partial<Appointment>) => {
-    setAppointments(prev => 
-      prev.map(appt => 
-        appt.id === id ? { ...appt, ...updates } : appt
-      )
-    );
+    setAppointments(prev => {
+      const updated = prev.map(appt => appt.id === id ? { ...appt, ...updates } : appt);
+      localStorage.setItem('saloniq_appointments', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (!isSupabaseConfigured || !supabase) return;
+
     const dbUpdates: Record<string, unknown> = {};
     if (updates.customerId !== undefined) dbUpdates.customer_id = isUuid(updates.customerId) ? updates.customerId : null;
     if (updates.employeeId !== undefined) dbUpdates.staff_member_id = isUuid(updates.employeeId) ? updates.employeeId : null;

@@ -14,7 +14,7 @@ export default function Reports() {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-5">
-        <TabsList>
+        <TabsList className="bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 p-1 rounded-xl shadow-md">
           <TabsTrigger value="analytics" className="gap-2">
             <BarChart3 className="h-4 w-4" /> Analytics
           </TabsTrigger>

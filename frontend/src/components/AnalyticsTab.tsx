@@ -201,7 +201,7 @@ export function AnalyticsTab() {
   return (
     <div className="space-y-6">
       {/* Header & Filter Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card/60 dark:bg-card/40 p-4 rounded-xl border border-border/60 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-4 rounded-xl border-2 border-slate-300 dark:border-slate-700 shadow-md">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-indigo-500" />
@@ -215,7 +215,7 @@ export function AnalyticsTab() {
         <div className="flex items-center gap-3">
           {/* Time Range Selector */}
           <Select value={timeRange} onValueChange={(val: any) => setTimeRange(val)}>
-            <SelectTrigger className="w-[110px] h-9 text-xs font-medium border-border/80">
+            <SelectTrigger className="w-[110px] h-9 text-xs font-semibold border-2 border-slate-300 dark:border-slate-700">
               <SelectValue placeholder="Select range" />
             </SelectTrigger>
             <SelectContent>
@@ -232,7 +232,7 @@ export function AnalyticsTab() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 px-3 text-xs font-medium border-border/80 flex items-center gap-2"
+                className="h-9 px-3 text-xs font-semibold border-2 border-slate-300 dark:border-slate-700 flex items-center gap-2"
               >
                 <CalendarIcon className="h-3.5 w-3.5 text-indigo-500" />
                 <span>{format(selectedDate, 'MMM dd, yyyy')}</span>
@@ -251,15 +251,15 @@ export function AnalyticsTab() {
             </PopoverContent>
           </Popover>
 
-          <span className="hidden md:inline-block text-xs text-muted-foreground font-medium bg-muted/40 px-2.5 py-1 rounded-md border border-border/40">
+          <span className="hidden md:inline-block text-xs text-muted-foreground font-semibold bg-muted/40 px-2.5 py-1 rounded-md border-2 border-slate-300 dark:border-slate-700">
             Viewing data for {format(selectedDate, 'MMMM d, yyyy')}
           </span>
         </div>
       </div>
 
       {/* Main Chart Card: Revenue Trends */}
-      <Card className="border-border/70 shadow-md bg-card overflow-hidden">
-        <CardHeader className="pb-2 border-b border-border/40">
+      <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md bg-card overflow-hidden">
+        <CardHeader className="pb-2 border-b-2 border-slate-300 dark:border-slate-700">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <CardTitle className="text-base font-bold flex items-center gap-2 text-foreground">
@@ -270,7 +270,7 @@ export function AnalyticsTab() {
                 Revenue for {format(selectedDate, 'MMMM d, yyyy')} ({timeRange} View)
               </CardDescription>
             </div>
-            <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800 text-xs font-semibold px-2.5 py-1">
+            <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-300 dark:border-indigo-800 text-xs font-bold px-2.5 py-1">
               Live Trends
             </Badge>
           </div>
@@ -310,7 +310,7 @@ export function AnalyticsTab() {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
-                        <div className="bg-popover text-popover-foreground border border-border p-2.5 rounded-lg shadow-xl text-xs space-y-1">
+                        <div className="bg-popover text-popover-foreground border-2 border-slate-300 dark:border-slate-700 p-2.5 rounded-lg shadow-xl text-xs space-y-1">
                           <p className="font-semibold">{data.time}</p>
                           <p className="text-indigo-500 font-bold text-sm">
                             Revenue: {data.formattedRev}
@@ -348,17 +348,17 @@ export function AnalyticsTab() {
       {/* Middle Row: Top Services & Top Performers */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Card: Top Services */}
-        <Card className="border-border/70 shadow-sm bg-card">
-          <CardHeader className="p-4 border-b border-border/40 flex flex-row items-center justify-between space-y-0">
+        <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md bg-card">
+          <CardHeader className="p-4 border-b-2 border-slate-300 dark:border-slate-700 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-bold flex items-center gap-2">
               <Star className="h-4 w-4 text-purple-500" />
               <span>Top Services</span>
             </CardTitle>
-            <Badge className="bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 text-[11px] font-semibold">
+            <Badge className="bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-2 border-purple-300 dark:border-purple-800 text-[11px] font-semibold">
               Today
             </Badge>
           </CardHeader>
-          <CardContent className="p-4 divide-y divide-border/30">
+          <CardContent className="p-4 divide-y divide-slate-200 dark:divide-slate-800">
             {topServicesData.map((svc, idx) => (
               <div key={idx} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-3">
@@ -380,8 +380,8 @@ export function AnalyticsTab() {
         </Card>
 
         {/* Right Card: Top Performers */}
-        <Card className="border-border/70 shadow-sm bg-card">
-          <CardHeader className="p-4 border-b border-border/40 flex flex-row items-center justify-between space-y-0">
+        <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md bg-card">
+          <CardHeader className="p-4 border-b-2 border-slate-300 dark:border-slate-700 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-sm font-bold flex items-center gap-2">
               <Award className="h-4 w-4 text-amber-500" />
               <span>Top Performers</span>
@@ -425,7 +425,7 @@ export function AnalyticsTab() {
       </div>
 
       {/* Section 4: Preserved Detailed Analytics & Insights Widgets */}
-      <div className="pt-2 border-t border-border/40">
+      <div className="pt-4 border-t-2 border-slate-300 dark:border-slate-700">
         <h3 className="text-base font-bold text-foreground mb-4">Detailed Performance & Commission Insights</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <StaffPerformanceWidget />

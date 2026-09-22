@@ -27,10 +27,22 @@ interface StaffContextType {
 
 const StaffContext = createContext<StaffContextType | undefined>(undefined);
 
+import { isSupabaseConfigured } from '@/lib/supabase';
+
+const initialStaffMembers: Employee[] = [
+  { id: '1', name: 'Priyanka Patil', role: 'Master Barber & Stylist', photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop', available: true, rating: 4.9, specialties: ['Haircut', 'Styling'] },
+  { id: '2', name: 'Rahul Sharma', role: 'Senior Stylist', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop', available: true, rating: 4.8, specialties: ['Coloring', 'Beard Grooming'] },
+  { id: '3', name: 'Sneha Kapur', role: 'Skin & Spa Specialist', photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop', available: true, rating: 4.9, specialties: ['Facials', 'Head Massage'] }
+];
+
 export function StaffProvider({ children }: { children: ReactNode }) {
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>(() => {
+    const saved = localStorage.getItem('saloniq_staff');
+    return saved ? JSON.parse(saved) : initialStaffMembers;
+  });
   
   useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
     let active = true;
     void (async () => {
       try {
@@ -38,14 +50,15 @@ export function StaffProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.from('staff_members').select('*').eq('shop_id', shopId).order('created_at');
         if (error) throw error;
         if (!active) return;
-        setEmployees((data || []).map((row: any) => ({
+        const fetched = (data || []).map((row: any) => ({
           id: row.id, name: row.name, role: row.role, photo: row.photo || '', available: row.available,
           specialties: row.specialties || [], rating: Number(row.rating || 0), nextAvailable: row.next_available || undefined,
           workingHours: { start: (row.working_start || '09:00').slice(0, 5), end: (row.working_end || '18:00').slice(0, 5) },
-        })));
+        }));
+        setEmployees(fetched);
+        localStorage.setItem('saloniq_staff', JSON.stringify(fetched));
       } catch (error) {
         reportPersistenceError('staff.load', error);
-        if (active) setEmployees([]);
       }
     })();
     return () => { active = false; };

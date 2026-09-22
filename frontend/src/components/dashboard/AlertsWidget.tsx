@@ -40,7 +40,7 @@ export const AlertsWidget: React.FC = () => {
   const displayList = notifications.slice(0, 4);
 
   return (
-    <Card className="border-border/60 shadow-sm">
+    <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md">
       <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Bell className="h-4 w-4 text-amber-500" />
@@ -57,7 +57,7 @@ export const AlertsWidget: React.FC = () => {
             <div
               key={alert.id}
               onClick={() => alert.actionUrl && navigate(alert.actionUrl)}
-              className={`p-3 rounded-xl border flex items-start justify-between gap-3 ${getBg(alert.type)} transition-colors hover:shadow-xs cursor-pointer`}
+              className={`p-3 rounded-xl border-2 flex items-start justify-between gap-3 ${getBg(alert.type)} transition-colors hover:shadow-sm cursor-pointer`}
             >
               <div className="flex items-start gap-3">
                 <div className={`p-2 rounded-lg bg-white dark:bg-gray-900 shadow-xs mt-0.5`}>

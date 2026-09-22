@@ -22,7 +22,7 @@ export const CustomerRetentionWidget: React.FC = () => {
   const offset = circumference - (repeatRate / 100) * circumference;
 
   return (
-    <Card className="border-border/60 shadow-sm">
+    <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md">
       <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <RotateCw className="h-4 w-4 text-teal-500" />
@@ -65,20 +65,20 @@ export const CustomerRetentionWidget: React.FC = () => {
 
           {/* Stats breakdown */}
           <div className="space-y-2 flex-1 text-xs">
-            <div className="flex items-center justify-between py-1 border-b border-border/40">
-              <span className="text-muted-foreground flex items-center gap-1.5">
+            <div className="flex items-center justify-between py-1.5 border-b-2 border-slate-200 dark:border-slate-700">
+              <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
                 <Users className="h-3.5 w-3.5 text-indigo-500" /> Total Customers
               </span>
               <span className="font-bold">{totalCustomers.toLocaleString('en-IN')}</span>
             </div>
-            <div className="flex items-center justify-between py-1 border-b border-border/40">
-              <span className="text-muted-foreground flex items-center gap-1.5">
+            <div className="flex items-center justify-between py-1.5 border-b-2 border-slate-200 dark:border-slate-700">
+              <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
                 <RotateCw className="h-3.5 w-3.5 text-teal-500" /> Returning Customers
               </span>
               <span className="font-bold">{returningCustomers.toLocaleString('en-IN')}</span>
             </div>
-            <div className="flex items-center justify-between py-1">
-              <span className="text-muted-foreground flex items-center gap-1.5">
+            <div className="flex items-center justify-between py-1.5">
+              <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
                 <Calendar className="h-3.5 w-3.5 text-amber-500" /> Avg. Visit Interval
               </span>
               <span className="font-bold">{avgVisitIntervalDays} days</span>
@@ -87,7 +87,7 @@ export const CustomerRetentionWidget: React.FC = () => {
         </div>
 
         {/* Insight Banner */}
-        <div className="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-900/50 text-teal-800 dark:text-teal-200 text-xs flex items-center gap-2">
+        <div className="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 border-2 border-teal-300 dark:border-teal-800 text-teal-900 dark:text-teal-200 text-xs flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-teal-600 dark:text-teal-400 shrink-0" />
           <span className="font-medium text-[11px]">{insight}</span>
         </div>

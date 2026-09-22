@@ -265,7 +265,7 @@ export default function Inventory() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="border-border/60 shadow-xs bg-card">
+        <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md bg-card">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground font-medium">Total Products</p>
@@ -278,7 +278,7 @@ export default function Inventory() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 shadow-xs bg-card">
+        <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md bg-card">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground font-medium">Inventory Valuation</p>
@@ -293,7 +293,7 @@ export default function Inventory() {
           </CardContent>
         </Card>
 
-        <Card className="border-amber-500/30 bg-amber-50/40 dark:bg-amber-950/20 shadow-xs">
+        <Card className="border-2 border-amber-500/60 bg-amber-50/40 dark:bg-amber-950/20 shadow-md">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Active (In Used)</p>
@@ -306,7 +306,7 @@ export default function Inventory() {
           </CardContent>
         </Card>
 
-        <Card className={cn("border-border/60 shadow-xs bg-card", lowStockCount > 0 && "border-rose-500/40 bg-rose-50/30 dark:bg-rose-950/20")}>
+        <Card className={cn("border-2 border-slate-300 dark:border-slate-700 shadow-md bg-card", lowStockCount > 0 && "border-rose-500 bg-rose-50/30 dark:bg-rose-950/20")}>
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground font-medium">Low Stock Warning</p>
@@ -324,8 +324,8 @@ export default function Inventory() {
 
       {/* Main Tabs Navigation */}
       <Tabs defaultValue="all" value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
-          <TabsList className="bg-muted/60 p-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b-2 border-slate-300 dark:border-slate-700 pb-3">
+          <TabsList className="bg-muted/60 p-1 border-2 border-slate-300 dark:border-slate-700">
             <TabsTrigger value="all" className="text-xs sm:text-sm font-semibold flex items-center gap-1.5">
               <Package className="h-4 w-4" />
               <span>All Inventory ({items.length})</span>
@@ -400,7 +400,7 @@ export default function Inventory() {
                 const isLowStock = item.stock <= item.minThreshold;
 
                 return (
-                  <Card key={item.id} className="border-border/70 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between bg-card">
+                  <Card key={item.id} className="border-2 border-slate-300 dark:border-slate-700 shadow-md hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between bg-card">
                     <div>
                       {/* Product Image */}
                       <div className="relative h-44 w-full bg-muted/30 overflow-hidden">

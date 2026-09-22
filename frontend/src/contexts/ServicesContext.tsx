@@ -20,10 +20,24 @@ interface ServicesContextValue {
 
 const ServicesContext = createContext<ServicesContextValue | undefined>(undefined);
 
+import { isSupabaseConfigured } from '@/lib/supabase';
+
+const initialServices: SalonService[] = [
+  { id: '1', name: 'Haircut & Styling', duration: 45, price: 500, category: 'Hair Care', description: 'Professional haircut with washing and blow dry' },
+  { id: '2', name: 'Hair Coloring & Highlights', duration: 90, price: 1800, category: 'Hair Care', description: 'Premium global hair color and highlights' },
+  { id: '3', name: 'Facial & Skin Cleanup', duration: 60, price: 1200, category: 'Skin Care', description: 'Deep pore facial with skin glow treatment' },
+  { id: '4', name: 'Spa Body Massage', duration: 60, price: 1500, category: 'Spa & Wellness', description: 'Relaxing full body spa massage' },
+  { id: '5', name: 'Beard Trimming & Styling', duration: 30, price: 300, category: 'Grooming', description: 'Precision beard shaping and hot towel treatment' }
+];
+
 export function ServicesProvider({ children }: { children: ReactNode }) {
-  const [services, setServices] = useState<SalonService[]>([]);
+  const [services, setServices] = useState<SalonService[]>(() => {
+    const saved = localStorage.getItem('saloniq_services');
+    return saved ? JSON.parse(saved) : initialServices;
+  });
 
   useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
     let active = true;
     void (async () => {
       try {
@@ -31,13 +45,14 @@ export function ServicesProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.from('services').select('*').eq('shop_id', shopId).eq('is_active', true).order('id');
         if (error) throw error;
         if (!active) return;
-        setServices((data || []).map((row: any) => ({
+        const fetched = (data || []).map((row: any) => ({
           id: String(row.id), name: row.service_name, duration: row.duration_minutes,
           price: Number(row.total_price || 0), category: row.category, description: row.description || '',
-        })));
+        }));
+        setServices(fetched);
+        localStorage.setItem('saloniq_services', JSON.stringify(fetched));
       } catch (error) {
         reportPersistenceError('services.load', error);
-        if (active) setServices([]);
       }
     })();
     return () => { active = false; };

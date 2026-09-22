@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { mockProducts } from '@/data/mockData';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { createId, getActiveShopId, reportPersistenceError } from '@/services/salonDataService';
 
 export interface StoreProduct {
@@ -171,10 +171,17 @@ const initialOrdersData: StoreOrder[] = [
 ];
 
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [products, setProducts] = useState<StoreProduct[]>([]);
-  const [orders, setOrders] = useState<StoreOrder[]>([]);
+  const [products, setProducts] = useState<StoreProduct[]>(() => {
+    const saved = localStorage.getItem('saloniq_products');
+    return saved ? JSON.parse(saved) : initialStoreProducts;
+  });
+  const [orders, setOrders] = useState<StoreOrder[]>(() => {
+    const saved = localStorage.getItem('saloniq_orders');
+    return saved ? JSON.parse(saved) : initialOrdersData;
+  });
 
   useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
     let active = true;
     void (async () => {
       try {
@@ -186,12 +193,12 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (productError) throw productError;
         if (orderError) throw orderError;
         if (!active) return;
-        setProducts((productRows || []).map((row: any) => ({
+        const fetchedProducts = (productRows || []).map((row: any) => ({
           id: row.id, name: row.name, category: row.category || '', brand: row.brand || '', price: Number(row.price || 0),
           stock: row.stock || 0, image: row.image || '', description: row.description || '', status: row.status,
           createdDate: row.created_at?.split('T')[0],
-        })));
-        setOrders((orderRows || []).map((row: any) => ({
+        }));
+        const fetchedOrders = (orderRows || []).map((row: any) => ({
           id: row.id, orderNumber: row.order_number, customerName: row.customer_name, customerPhone: row.customer_phone,
           deliveryType: row.delivery_type, address: row.address || undefined,
           items: (row.store_order_items || []).map((item: any) => ({
@@ -200,10 +207,13 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           })),
           totalAmount: Number(row.total_amount || 0), paymentMethod: row.payment_method, paymentStatus: row.payment_status,
           orderStatus: row.order_status, orderDate: row.created_at?.split('T')[0], notes: row.notes || undefined,
-        })));
+        }));
+        setProducts(fetchedProducts);
+        setOrders(fetchedOrders);
+        localStorage.setItem('saloniq_products', JSON.stringify(fetchedProducts));
+        localStorage.setItem('saloniq_orders', JSON.stringify(fetchedOrders));
       } catch (error) {
         reportPersistenceError('store.load', error);
-        if (active) { setProducts([]); setOrders([]); }
       }
     })();
     return () => { active = false; };
@@ -215,7 +225,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       id: createId(),
       createdDate: new Date().toISOString().split('T')[0]
     };
-    setProducts(prev => [newProduct, ...prev]);
+    setProducts(prev => {
+      const updated = [newProduct, ...prev];
+      localStorage.setItem('saloniq_products', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (!isSupabaseConfigured || !supabase) return;
+
     void (async () => {
       try {
         const shopId = await getActiveShopId();
@@ -227,13 +244,19 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (error) throw error;
       } catch (error) {
         reportPersistenceError('store.product.add', error);
-        setProducts(prev => prev.filter(product => product.id !== newProduct.id));
       }
     })();
   };
 
   const updateProduct = (id: string, updates: Partial<StoreProduct>) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+    setProducts(prev => {
+      const updated = prev.map(p => p.id === id ? { ...p, ...updates } : p);
+      localStorage.setItem('saloniq_products', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (!isSupabaseConfigured || !supabase) return;
+
     const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     const fields: Array<[keyof StoreProduct, string]> = [
       ['name', 'name'], ['category', 'category'], ['brand', 'brand'], ['price', 'price'], ['stock', 'stock'],
@@ -246,7 +269,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const deleteProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+    setProducts(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      localStorage.setItem('saloniq_products', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (!isSupabaseConfigured || !supabase) return;
+
     void supabase.from('store_products').delete().eq('id', id).then(({ error }) => {
       if (error) reportPersistenceError('store.product.delete', error);
     });
@@ -262,20 +292,31 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     };
 
     // Deduct stock for each purchased item
-    setProducts(prev => prev.map(prod => {
-      const purchasedItem = orderData.items.find(i => i.productId === prod.id);
-      if (purchasedItem) {
-        const remainingStock = Math.max(0, prod.stock - purchasedItem.quantity);
-        return {
-          ...prod,
-          stock: remainingStock,
-          status: remainingStock === 0 ? 'out_of_stock' : prod.status
-        };
-      }
-      return prod;
-    }));
+    setProducts(prev => {
+      const updated = prev.map(prod => {
+        const purchasedItem = orderData.items.find(i => i.productId === prod.id);
+        if (purchasedItem) {
+          const remainingStock = Math.max(0, prod.stock - purchasedItem.quantity);
+          return {
+            ...prod,
+            stock: remainingStock,
+            status: remainingStock === 0 ? 'out_of_stock' : prod.status
+          };
+        }
+        return prod;
+      });
+      localStorage.setItem('saloniq_products', JSON.stringify(updated));
+      return updated;
+    });
 
-    setOrders(prev => [newOrder, ...prev]);
+    setOrders(prev => {
+      const updated = [newOrder, ...prev];
+      localStorage.setItem('saloniq_orders', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (!isSupabaseConfigured || !supabase) return newOrder;
+
     void (async () => {
       try {
         const shopId = await getActiveShopId();
@@ -299,7 +340,6 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }));
       } catch (error) {
         reportPersistenceError('store.order.add', error);
-        setOrders(prev => prev.filter(order => order.id !== newOrder.id));
       }
     })();
     return newOrder;

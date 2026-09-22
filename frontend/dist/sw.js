@@ -1,4 +1,4 @@
-const CACHE_NAME = 'saloniq-shell-v1';
+const CACHE_NAME = 'saloniq-shell-v2';
 const APP_SHELL = ['/', '/index.html', '/pwa-icon.svg'];
 
 self.addEventListener('install', (event) => {

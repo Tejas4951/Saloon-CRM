@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Google+Sans:wght@400;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -104,6 +104,78 @@
     --sidebar-accent-foreground: 40 16% 92%;
     --sidebar-border: 24 8% 16%;
     --sidebar-ring: 266 82% 65%;
+  }
+
+  /* Dribbble HR Management Theme Overrides (Electric Indigo & Modern Slate SaaS) */
+  [data-admin-theme="hr-management"] {
+    --primary: 238 84% 60%;
+    --primary-glow: 270 90% 65%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 238 100% 97%;
+    --secondary-foreground: 238 75% 42%;
+
+    --accent: 238 92% 96%;
+    --accent-foreground: 238 75% 42%;
+
+    --ring: 238 84% 60%;
+    --radius: 1rem;
+
+    --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #4f46e5 100%);
+    --shadow-soft: 0 4px 16px -2px rgba(99, 102, 241, 0.12);
+    --shadow-glow: 0 12px 28px -6px rgba(99, 102, 241, 0.35);
+    --shadow-card: 0 4px 20px -4px rgba(99, 102, 241, 0.1), 0 2px 8px -2px rgba(15, 23, 42, 0.05);
+
+    --sidebar-background: 224 47% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 238 84% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 224 40% 18%;
+    --sidebar-accent-foreground: 238 84% 75%;
+    --sidebar-border: 224 35% 18%;
+    --sidebar-ring: 238 84% 60%;
+  }
+
+  [data-admin-theme="hr-management"].dark,
+  .dark[data-admin-theme="hr-management"] {
+    --background: 224 40% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 224 35% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 224 35% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 238 84% 67%;
+    --primary-glow: 270 90% 70%;
+
+    --secondary: 224 30% 16%;
+    --secondary-foreground: 238 84% 85%;
+
+    --muted: 224 30% 16%;
+    --muted-foreground: 215 20% 68%;
+
+    --accent: 224 30% 18%;
+    --accent-foreground: 238 84% 85%;
+
+    --border: 224 30% 20%;
+    --input: 224 30% 20%;
+    --ring: 238 84% 67%;
+
+    --gradient-card: linear-gradient(180deg, hsl(224 35% 13%) 0%, hsl(224 35% 10%) 100%);
+    --shadow-soft: 0 8px 30px -4px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 10px 30px -6px rgba(99, 102, 241, 0.25);
+    --shadow-card: 0 10px 32px -8px rgba(0, 0, 0, 0.5);
+
+    --sidebar-background: 224 47% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 238 84% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 224 40% 16%;
+    --sidebar-accent-foreground: 238 84% 85%;
+    --sidebar-border: 224 35% 16%;
+    --sidebar-ring: 238 84% 67%;
   }
 }
 
@@ -228,4 +300,298 @@
   .yepsta-theme [role="dialog"] {
     font-family: inherit;
   }
+
+  /* HR Management Theme Utility Overrides (100% Dribbble HR Management Visual Clone) */
+  .admin-theme-hr,
+  [data-admin-theme="hr-management"] {
+    --primary: 238 84% 60% !important;
+    --primary-glow: 270 90% 65% !important;
+    --ring: 238 84% 60% !important;
+    --radius: 1.25rem !important;
+    --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #4f46e5 100%) !important;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  }
+
+  .admin-theme-hr *,
+  [data-admin-theme="hr-management"] * {
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  }
+
+  /* --- AMBIENT CANVAS BACKGROUND (DRIBBBLE GLOW) --- */
+  .admin-theme-hr {
+    background-image: 
+      radial-gradient(circle at 12% 15%, rgba(99, 102, 241, 0.16) 0%, transparent 45%),
+      radial-gradient(circle at 88% 10%, rgba(168, 85, 247, 0.14) 0%, transparent 40%),
+      radial-gradient(circle at 50% 90%, rgba(6, 182, 212, 0.08) 0%, transparent 50%) !important;
+  }
+
+  /* --- DRIBBBLE GLASSMORPHISM & 20PX ROUNDED CARDS --- */
+  .admin-theme-hr .bg-card,
+  .admin-theme-hr .bg-card\/50,
+  .admin-theme-hr .bg-card\/60,
+  .admin-theme-hr .bg-gradient-card,
+  .admin-theme-hr [class*="Card"] {
+    border-radius: 1.25rem !important; /* 20px rounded card corners */
+    backdrop-filter: blur(16px) !important;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.32, 1), box-shadow 0.25s ease, border-color 0.25s ease !important;
+  }
+
+  .admin-theme-hr .bg-card:hover,
+  .admin-theme-hr .bg-card\/50:hover,
+  .admin-theme-hr .bg-gradient-card:hover {
+    transform: translateY(-3px) !important;
+  }
+
+  /* --- LIGHT MODE HR THEME SURFACES --- */
+  html:not(.dark) .admin-theme-hr,
+  html:not(.dark)[data-admin-theme="hr-management"] {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+  }
+
+  html:not(.dark) .admin-theme-hr .bg-background {
+    background-color: #f1f5f9 !important;
+  }
+
+  html:not(.dark) .admin-theme-hr .bg-card,
+  html:not(.dark) .admin-theme-hr .bg-card\/50,
+  html:not(.dark) .admin-theme-hr .bg-card\/60,
+  html:not(.dark) .admin-theme-hr .bg-gradient-card {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    background-image: none !important;
+    border: 1px solid rgba(203, 213, 225, 0.9) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.1), 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+  }
+
+  html:not(.dark) .admin-theme-hr .bg-card:hover {
+    box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.18), 0 6px 16px rgba(15, 23, 42, 0.06) !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
+  }
+
+  html:not(.dark) .admin-theme-hr header {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid rgba(203, 213, 225, 0.8) !important;
+  }
+
+  /* --- DARK MODE HR THEME SURFACES --- */
+  .admin-theme-hr.dark,
+  .dark .admin-theme-hr,
+  [data-admin-theme="hr-management"].dark,
+  .dark[data-admin-theme="hr-management"] {
+    --background: 224 40% 8% !important;
+    --card: 224 35% 11% !important;
+    --card-foreground: 210 40% 98% !important;
+    --border: 224 30% 20% !important;
+    --muted: 224 30% 16% !important;
+    --accent: 224 30% 18% !important;
+    background-color: #0c0f1d !important;
+    color: #f8fafc !important;
+  }
+
+  .dark .admin-theme-hr .bg-background,
+  .dark[data-admin-theme="hr-management"] .bg-background {
+    background-color: #0c0f1d !important;
+  }
+
+  .dark .admin-theme-hr .bg-card,
+  .dark .admin-theme-hr .bg-card\/50,
+  .dark .admin-theme-hr .bg-card\/60,
+  .dark .admin-theme-hr .bg-gradient-card {
+    background-color: rgba(15, 23, 42, 0.85) !important;
+    background-image: linear-gradient(180deg, rgba(30, 27, 75, 0.5) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+    border: 1px solid rgba(99, 102, 241, 0.25) !important;
+    border-top: 1px solid rgba(165, 180, 252, 0.25) !important;
+    box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.6), 0 0 25px -4px rgba(99, 102, 241, 0.2) !important;
+  }
+
+  .dark .admin-theme-hr .bg-card:hover {
+    box-shadow: 0 25px 55px -10px rgba(0, 0, 0, 0.7), 0 0 35px -2px rgba(99, 102, 241, 0.35) !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+  }
+
+  .dark .admin-theme-hr header {
+    background-color: rgba(12, 15, 29, 0.88) !important;
+    backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2) !important;
+  }
+
+  /* --- DRIBBBLE GLASSMORPHISM SIDEBAR --- */
+  .admin-theme-hr aside {
+    background-color: rgba(12, 15, 29, 0.96) !important;
+    backdrop-filter: blur(20px) !important;
+    border-right: 1px solid rgba(99, 102, 241, 0.2) !important;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .admin-theme-hr aside .bg-\[\#111827\] {
+    background-color: rgba(12, 15, 29, 0.96) !important;
+  }
+
+  /* Brand Logo & Header in Sidebar */
+  .admin-theme-hr aside .bg-gradient-to-tr.from-amber-600 {
+    background-image: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%) !important;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45) !important;
+    border-radius: 1rem !important;
+  }
+
+  .admin-theme-hr aside .bg-gradient-to-r.from-amber-200 {
+    background-image: linear-gradient(90deg, #c084fc 0%, #818cf8 50%, #38bdf8 100%) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+  }
+
+  .admin-theme-hr aside .text-amber-400\/70 {
+    color: rgba(192, 132, 252, 0.85) !important;
+  }
+
+  /* Sidebar Navigation Links */
+  .admin-theme-hr aside nav a {
+    border-radius: 1rem !important; /* 16px floating pills */
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.32, 1) !important;
+  }
+
+  /* Sidebar Active Floating Pill */
+  .admin-theme-hr aside nav a.from-amber-500 {
+    background-image: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #4f46e5 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.5) !important;
+    border-radius: 1rem !important;
+  }
+
+  .admin-theme-hr aside nav a.from-amber-500 svg {
+    color: #ffffff !important;
+  }
+
+  .admin-theme-hr aside nav a:not(.from-amber-500):hover {
+    background-color: rgba(99, 102, 241, 0.14) !important;
+    color: #a5b4fc !important;
+  }
+
+  .admin-theme-hr aside nav a:not(.from-amber-500) svg {
+    color: #818cf8 !important;
+  }
+
+  /* Sidebar Footer Outlet Badge */
+  .admin-theme-hr aside .bg-gray-950\/60 {
+    background-color: #070914 !important;
+    border-top: 1px solid rgba(99, 102, 241, 0.15) !important;
+  }
+
+  .admin-theme-hr aside .bg-gray-900\/90 {
+    background-color: rgba(30, 27, 75, 0.7) !important;
+    border: 1px solid rgba(99, 102, 241, 0.35) !important;
+    border-radius: 0.875rem !important;
+  }
+
+  .admin-theme-hr aside .text-amber-400,
+  .admin-theme-hr aside .text-amber-400\/80 {
+    color: #a5b4fc !important;
+  }
+
+  /* --- HARDCODED AMBER -> ELECTRIC INDIGO / VIOLET REMAPPING --- */
+  .admin-theme-hr .bg-amber-500,
+  .admin-theme-hr .bg-amber-600 {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35) !important;
+    border-radius: 1rem !important;
+  }
+
+  .admin-theme-hr .bg-amber-500\/10,
+  .admin-theme-hr .bg-amber-500\/20,
+  .admin-theme-hr .bg-amber-50,
+  .admin-theme-hr .bg-amber-950\/30,
+  .admin-theme-hr .bg-amber-950\/40,
+  .admin-theme-hr .bg-amber-950\/20 {
+    background-color: rgba(99, 102, 241, 0.15) !important;
+    border-radius: 0.875rem !important;
+  }
+
+  .admin-theme-hr .hover\:bg-amber-600:hover {
+    background-color: #4f46e5 !important;
+  }
+
+  .admin-theme-hr .text-amber-500,
+  .admin-theme-hr .text-amber-600,
+  .admin-theme-hr .text-amber-400,
+  .admin-theme-hr .text-amber-300,
+  .admin-theme-hr .text-amber-700 {
+    color: #818cf8 !important;
+  }
+
+  .admin-theme-hr .border-amber-500,
+  .admin-theme-hr .border-amber-400,
+  .admin-theme-hr .border-amber-500\/40,
+  .admin-theme-hr .border-amber-500\/20,
+  .admin-theme-hr .border-amber-500\/30,
+  .admin-theme-hr .border-amber-500\/60,
+  .admin-theme-hr .border-amber-500\/50,
+  .admin-theme-hr .border-amber-500\/80 {
+    border-color: rgba(99, 102, 241, 0.45) !important;
+  }
+
+  .admin-theme-hr .shadow-amber-500\/20 {
+    --tw-shadow-color: rgba(99, 102, 241, 0.35) !important;
+  }
+
+  .admin-theme-hr .ring-amber-500\/50,
+  .admin-theme-hr .ring-amber-500 {
+    --tw-ring-color: rgba(99, 102, 241, 0.6) !important;
+  }
+
+  .admin-theme-hr .from-amber-500 {
+    --tw-gradient-from: #6366f1 var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgb(99 102 241 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-from), var(--tw-gradient-to)) !important;
+  }
+
+  .admin-theme-hr .to-amber-600 {
+    --tw-gradient-to: #4f46e5 var(--tw-gradient-to-position) !important;
+  }
+
+  .admin-theme-hr .bg-gradient-primary {
+    background-image: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #4f46e5 100%) !important;
+  }
+}
+
+/* Lovable Styles & Glow Neumorphic Utilities */
+.neu {
+  background-color: var(--card);
+  box-shadow: 6px 6px 14px rgba(0, 0, 0, 0.05), -6px -6px 14px rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+.dark .neu {
+  background-color: rgba(30, 30, 35, 0.85);
+  box-shadow: 6px 6px 14px rgba(0, 0, 0, 0.4), -6px -6px 14px rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.neu-press {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.32, 1);
+}
+.neu-press:active {
+  transform: scale(0.97);
+  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.08), inset -3px -3px 8px rgba(255, 255, 255, 0.5);
+}
+.neu-inset {
+  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.06), inset -3px -3px 8px rgba(255, 255, 255, 0.6);
+}
+.dark .neu-inset {
+  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.4), inset -3px -3px 8px rgba(255, 255, 255, 0.03);
+}
+.neu-sm {
+  box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.04), -3px -3px 8px rgba(255, 255, 255, 0.7);
+}
+.grad-styles {
+  background: linear-gradient(135deg, #f43f5e 0%, #ec4899 40%, #8b5cf6 100%);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

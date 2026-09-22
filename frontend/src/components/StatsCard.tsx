@@ -39,7 +39,7 @@ export default function StatsCard({
   return (
     <Card 
       className={cn(
-        "overflow-hidden bg-gradient-card border-border/50 transition-all duration-200 hover:shadow-sm",
+        "overflow-hidden bg-gradient-card border-2 border-slate-300 dark:border-slate-700 shadow-md transition-all duration-200 hover:shadow-lg hover:border-amber-500/80",
         compact ? 'h-full' : '',
         className
       )}

@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DownloadDataTab } from '@/components/DownloadDataTab';
 import { AnalyticsTab } from '@/components/AnalyticsTab';
+import { TransactionsTab } from '@/components/TransactionsTab';
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,40 +167,46 @@ const Dashboard = () => {
     amount: number;
   } | null>(null);
 
+  const selectedDateKey = format(selectedDate, "yyyy-MM-dd");
+  const isTodaySelected = isSameDay(selectedDate, new Date());
+
   const todaysAppointments = appointments
-    .filter((appointment) => appointment.date === format(selectedDate, "yyyy-MM-dd"))
+    .filter((appointment) => appointment.date === selectedDateKey)
     .sort((a, b) => {
       if (a.status === 'cancelled' && b.status !== 'cancelled') return 1;
       if (a.status !== 'cancelled' && b.status === 'cancelled') return -1;
-      if (a.status === 'completed' && b.status !== 'completed') return 1;
-      if (a.status !== 'completed' && b.status === 'completed') return -1;
-      return a.time.localeCompare(b.time);
+      if (a.createdAt && b.createdAt) {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return 0;
     });
 
-  // Calculate today's revenue (strictly excluding cancelled items)
+  // Calculate revenue for the selected date (strictly completed payments on that date)
   const todaysRevenue = tallyItems
-    .filter(item => item.date === format(new Date(), 'yyyy-MM-dd') && item.paymentStatus === 'completed')
+    .filter(item => item.date === selectedDateKey && item.paymentStatus === 'completed')
     .reduce((sum, item) => sum + item.totalCost, 0);
 
-  const todayKey = format(new Date(), 'yyyy-MM-dd');
-  const newCustomersToday = customers.filter(customer => customer.createdAt?.startsWith(todayKey)).length;
+  const newCustomersToday = customers.filter(customer => 
+    customer.createdAt?.startsWith(selectedDateKey) || customer.lastVisit?.startsWith(selectedDateKey)
+  ).length;
+
   const pendingItems = tallyItems.filter(item => item.paymentStatus === 'pending');
   const pendingPayments = pendingItems.reduce((sum, item) => sum + item.totalCost, 0);
 
   const getPeriodRevenue = (days: number) => {
-    const cutoff = new Date();
+    const cutoff = new Date(selectedDate);
     cutoff.setDate(cutoff.getDate() - (days - 1));
     cutoff.setHours(0, 0, 0, 0);
     return tallyItems
-      .filter(item => item.paymentStatus === 'completed' && new Date(item.date) >= cutoff)
+      .filter(item => item.paymentStatus === 'completed' && new Date(item.date) >= cutoff && new Date(item.date) <= selectedDate)
       .reduce((sum, item) => sum + item.totalCost, 0);
   };
 
   const monthRevenue = tallyItems
-    .filter(item => item.paymentStatus === 'completed' && isSameMonth(new Date(item.date), new Date()) && isSameYear(new Date(item.date), new Date()))
+    .filter(item => item.paymentStatus === 'completed' && isSameMonth(new Date(item.date), selectedDate) && isSameYear(new Date(item.date), selectedDate))
     .reduce((sum, item) => sum + item.totalCost, 0);
   const yearRevenue = tallyItems
-    .filter(item => item.paymentStatus === 'completed' && isSameYear(new Date(item.date), new Date()))
+    .filter(item => item.paymentStatus === 'completed' && isSameYear(new Date(item.date), selectedDate))
     .reduce((sum, item) => sum + item.totalCost, 0);
   const returningCustomers = customers.filter(customer => customer.visitCount > 1).length;
   const retentionRate = customers.length ? Math.round((returningCustomers / customers.length) * 100) : 0;
@@ -221,10 +228,10 @@ const Dashboard = () => {
     }
   };
 
-  // 7-day revenue & appointments data for ComposedChart
+  // 7-day revenue & appointments data ending on selectedDate
   const getWeeklyComboData = () => {
     return Array.from({ length: 7 }, (_, index) => {
-      const date = new Date();
+      const date = new Date(selectedDate);
       date.setDate(date.getDate() - (6 - index));
       const dateKey = format(date, 'yyyy-MM-dd');
       return {
@@ -251,48 +258,64 @@ const Dashboard = () => {
       )}
 
       {/* Greeting Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent p-5 rounded-2xl border border-amber-500/20">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent p-5 rounded-2xl border-2 border-amber-500/40 dark:border-amber-500/30 shadow-md">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold flex items-center gap-2">
             <Sun className="h-6 w-6 text-amber-500 animate-pulse" />
-            <span>Good morning, Owner</span>
+            <span>{isTodaySelected ? "Good morning, Owner" : `Dashboard for ${format(selectedDate, "dd MMM yyyy")}`}</span>
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Here's what's happening at your salon today.
+            {isTodaySelected 
+              ? "Here's what's happening at your salon today." 
+              : `Showing revenue, appointments & customer statistics for ${format(selectedDate, "dd MMMM yyyy")}.`}
           </p>
         </div>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="bg-card border-border/60 text-foreground font-semibold text-xs h-9 shadow-xs">
-              <CalendarDays className="h-3.5 w-3.5 mr-2 text-amber-500" />
-              {format(selectedDate, "EEE, dd MMM yyyy")}
+        <div className="flex items-center gap-2">
+          {!isTodaySelected && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs h-9 border-2 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+              onClick={() => setSelectedDate(new Date())}
+            >
+              Reset to Today
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
-            <CalendarComponent
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="bg-card border-2 border-slate-300 dark:border-slate-700 text-foreground font-semibold text-xs h-9 shadow-sm">
+                <CalendarDays className="h-3.5 w-3.5 mr-2 text-amber-500" />
+                {format(selectedDate, "EEE, dd MMM yyyy")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* SALONIQ 4 Hero KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Today's Revenue */}
-        <Card className="border-border/60 shadow-xs hover:shadow-md transition-shadow bg-emerald-50/40 dark:bg-emerald-950/20">
+        {/* Revenue Card */}
+        <Card className="border-2 border-emerald-400 dark:border-emerald-700/80 shadow-md hover:shadow-lg transition-all bg-emerald-50/50 dark:bg-emerald-950/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-muted-foreground">Today's Revenue</p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {isTodaySelected ? "Today's Revenue" : `Revenue (${format(selectedDate, "dd MMM")})`}
+                </p>
                 <h3 className="text-2xl font-extrabold text-foreground mt-1">
                   ₹{todaysRevenue.toLocaleString('en-IN')}
                 </h3>
                 <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                   <TrendingUp className="h-3.5 w-3.5" />
-                  <span>Completed payments today</span>
+                  <span>{isTodaySelected ? "Completed payments today" : `Payments on ${format(selectedDate, "dd MMM")}`}</span>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xl shadow-xs">
@@ -302,18 +325,20 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Appointments */}
-        <Card className="border-border/60 shadow-xs hover:shadow-md transition-shadow bg-sky-50/40 dark:bg-sky-950/20">
+        {/* Appointments Card */}
+        <Card className="border-2 border-sky-400 dark:border-sky-700/80 shadow-md hover:shadow-lg transition-all bg-sky-50/50 dark:bg-sky-950/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-muted-foreground">Appointments</p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {isTodaySelected ? "Today's Appointments" : `Appointments (${format(selectedDate, "dd MMM")})`}
+                </p>
                 <h3 className="text-2xl font-extrabold text-foreground mt-1">
                   {todaysAppointments.length}
                 </h3>
                 <div className="flex items-center gap-1 text-[11px] font-bold text-sky-600 dark:text-sky-400 mt-1">
                   <TrendingUp className="h-3.5 w-3.5" />
-                  <span>For selected date</span>
+                  <span>{todaysAppointments.filter(a => a.status === 'completed').length} completed, {todaysAppointments.filter(a => a.status === 'scheduled').length} booked</span>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 flex items-center justify-center shadow-xs">
@@ -323,16 +348,18 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* New Customers */}
-        <Card className="border-border/60 shadow-xs hover:shadow-md transition-shadow bg-purple-50/40 dark:bg-purple-950/20">
+        {/* New Customers Card */}
+        <Card className="border-2 border-purple-400 dark:border-purple-700/80 shadow-md hover:shadow-lg transition-all bg-purple-50/50 dark:bg-purple-950/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-muted-foreground">New Customers</p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {isTodaySelected ? "New Customers Today" : `New Customers (${format(selectedDate, "dd MMM")})`}
+                </p>
                 <h3 className="text-2xl font-extrabold text-foreground mt-1">{newCustomersToday}</h3>
                 <div className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 mt-1">
                   <TrendingUp className="h-3.5 w-3.5" />
-                  <span>Added today</span>
+                  <span>{isTodaySelected ? "Added today" : `Active on ${format(selectedDate, "dd MMM")}`}</span>
                 </div>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-xs">
@@ -343,7 +370,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Pending Payments */}
-        <Card className="border-border/60 shadow-xs hover:shadow-md transition-shadow bg-amber-50/40 dark:bg-amber-950/20">
+        <Card className="border-2 border-amber-400 dark:border-amber-700/80 shadow-md hover:shadow-lg transition-all bg-amber-50/50 dark:bg-amber-950/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -376,44 +403,47 @@ const Dashboard = () => {
 
         {showAllStats && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2 pb-4">
-            <StatsCard title="Staff" value={`${employees.filter(e => e.available).length}/${employees.length}`} description="Available/Total" icon={<Users className="h-3.5 w-3.5" />} compact={true} />
+            <StatsCard title="Weekly Appts" value={weeklyComboData.reduce((sum, item) => sum + item.appointments, 0).toString()} description="Last 7 days" icon={<Calendar className="h-3.5 w-3.5" />} compact={true} />
             <StatsCard title="Weekly Rev" value={`₹${getPeriodRevenue(7).toLocaleString('en-IN')}`} description="Last 7 days" icon={<TrendingUp className="h-3.5 w-3.5" />} compact={true} />
             <StatsCard title="Monthly Rev" value={`₹${monthRevenue.toLocaleString('en-IN')}`} description="This month" icon={<TrendingUp className="h-3.5 w-3.5" />} compact={true} />
-            <StatsCard title="Weekly Appts" value={appointments.length.toString()} description="Last 7 days" icon={<Calendar className="h-3.5 w-3.5" />} compact={true} />
             <StatsCard title="Yearly Rev" value={`₹${yearRevenue.toLocaleString('en-IN')}`} description="This year" icon={<TrendingUp className="h-3.5 w-3.5" />} compact={true} />
+            <StatsCard title="Staff" value={`${employees.filter(e => e.available).length}/${employees.length}`} description="Available/Total" icon={<Users className="h-3.5 w-3.5" />} compact={true} />
             <StatsCard title="Retention" value={`${retentionRate}%`} description={`${returningCustomers} returning`} icon={<Repeat className="h-3.5 w-3.5" />} compact={true} />
           </div>
         )}
       </div>
 
+      {/* Bold Section Separator Divider */}
+      <div className="my-6 border-b-2 border-slate-300 dark:border-slate-700" />
+
       {/* Main 4 Dashboard Tabs */}
       <div ref={tabsRef} id="tabs-section">
         <Tabs defaultValue="schedule" className="space-y-6" onValueChange={scrollToTabs}>
-          <TabsList className="flex w-full justify-start border-b rounded-none p-0 bg-transparent space-x-4">
+          <TabsList className="flex w-full justify-start border-b-2 border-slate-300 dark:border-slate-700 rounded-none p-0 bg-transparent space-x-4">
             <TabsTrigger 
               value="schedule" 
-              className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-muted-foreground data-[state=active]:text-amber-500 data-[state=active]:border-b-2 data-[state=active]:border-amber-500 rounded-none bg-transparent"
+              className="px-4 py-2.5 text-xs sm:text-sm font-bold text-muted-foreground data-[state=active]:text-amber-500 data-[state=active]:border-b-4 data-[state=active]:border-amber-500 rounded-none bg-transparent"
             >
               <CalendarDays className="h-4 w-4 mr-2" />
               Appointments
             </TabsTrigger>
             <TabsTrigger 
               value="analytics" 
-              className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-muted-foreground data-[state=active]:text-amber-500 data-[state=active]:border-b-2 data-[state=active]:border-amber-500 rounded-none bg-transparent"
+              className="px-4 py-2.5 text-xs sm:text-sm font-bold text-muted-foreground data-[state=active]:text-amber-500 data-[state=active]:border-b-4 data-[state=active]:border-amber-500 rounded-none bg-transparent"
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Analytics
             </TabsTrigger>
             <TabsTrigger 
               value="transactions" 
-              className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-muted-foreground data-[state=active]:text-amber-500 data-[state=active]:border-b-2 data-[state=active]:border-amber-500 rounded-none bg-transparent"
+              className="px-4 py-2.5 text-xs sm:text-sm font-bold text-muted-foreground data-[state=active]:text-amber-500 data-[state=active]:border-b-4 data-[state=active]:border-amber-500 rounded-none bg-transparent"
             >
               <CreditCard className="h-4 w-4 mr-2" />
               Transactions
             </TabsTrigger>
             <TabsTrigger 
               value="download" 
-              className="px-4 py-2.5 text-xs sm:text-sm font-semibold text-muted-foreground data-[state=active]:text-amber-500 data-[state=active]:border-b-2 data-[state=active]:border-amber-500 rounded-none bg-transparent"
+              className="px-4 py-2.5 text-xs sm:text-sm font-bold text-muted-foreground data-[state=active]:text-amber-500 data-[state=active]:border-b-4 data-[state=active]:border-amber-500 rounded-none bg-transparent"
             >
               <Download className="h-4 w-4 mr-2" />
               Download
@@ -425,7 +455,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column: Today's Appointments Table */}
               <div className="lg:col-span-2 space-y-6">
-                <Card className="border-border/60 shadow-sm">
+                <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md">
                   <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
                     <div>
                       <CardTitle className="text-base font-semibold text-foreground">Today's Appointments</CardTitle>
@@ -440,7 +470,7 @@ const Dashboard = () => {
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
                           <thead>
-                            <tr className="border-b text-muted-foreground font-medium">
+                            <tr className="border-b-2 border-slate-300 dark:border-slate-700 text-foreground font-bold">
                               <th className="py-2.5 px-2">Time</th>
                               <th className="py-2.5 px-2">Customer</th>
                               <th className="py-2.5 px-2">Service(s)</th>
@@ -449,7 +479,7 @@ const Dashboard = () => {
                               <th className="py-2.5 px-2 text-right">Action</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-border/40">
+                          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                             {todaysAppointments.map((apt) => {
                               const customer = customers.find(c => c.id === apt.customerId);
                               const employee = employees.find(e => e.id === apt.employeeId);
@@ -527,7 +557,7 @@ const Dashboard = () => {
                 </Card>
 
                 {/* 7-Day Revenue & Appointments Overview Chart */}
-                <Card className="border-border/60 shadow-sm">
+                <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md">
                   <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
                     <div>
                       <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -566,7 +596,6 @@ const Dashboard = () => {
               <div className="space-y-6">
                 <QuickActions 
                   onNewAppointment={() => navigate('/booking')} 
-                  onAddCustomer={() => setIsAddCustomerOpen(true)} 
                 />
                 <AlertsWidget />
                 <CustomerRetentionWidget />
@@ -582,40 +611,7 @@ const Dashboard = () => {
 
           {/* Tab 3: Transactions */}
           <TabsContent value="transactions" className="space-y-6">
-            <Card className="border-border/60 shadow-sm p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold">Transaction & Tally Logs</h3>
-                <Input
-                  placeholder="Search transactions..."
-                  value={transactionSearch}
-                  onChange={(e) => setTransactionSearch(e.target.value)}
-                  className="max-w-xs text-xs h-8"
-                />
-              </div>
-
-              <div className="divide-y divide-border/40 space-y-2">
-                {tallyItems.map((tx) => (
-                  <div key={tx.id} className="py-3 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold">{tx.customerName}</p>
-                      <p className="text-muted-foreground">{tx.date} • {tx.staffName} • {tx.paymentMethod.toUpperCase()}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-extrabold text-foreground">₹{tx.totalCost.toLocaleString('en-IN')}</p>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        tx.paymentStatus === 'cancelled' 
-                          ? 'bg-rose-100 text-rose-700' 
-                          : tx.paymentStatus === 'pending'
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-emerald-50 text-emerald-600'
-                      }`}>
-                        {tx.paymentStatus.toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+            <TransactionsTab />
           </TabsContent>
 
           {/* Tab 4: Download Data */}

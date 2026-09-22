@@ -7,6 +7,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Calendar, 
   Clock, 
@@ -263,7 +271,7 @@ export default function Schedule() {
       </div>
 
       {/* Date Navigation */}
-      <Card className="bg-gradient-card border-border/50 shadow-card">
+      <Card className="bg-gradient-card border-2 border-slate-300 dark:border-slate-700 shadow-md">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <Button variant="outline" size="icon" onClick={() => navigateDate('prev')}>
@@ -287,7 +295,7 @@ export default function Schedule() {
       {/* Schedule Grid */}
       <div className="grid gap-6">
         {/* Staff Schedule */}
-        <Card className="bg-card/50 dark:bg-card border-border/50 shadow-card overflow-hidden">
+        <Card className="bg-card/50 dark:bg-card border-2 border-slate-300 dark:border-slate-700 shadow-md overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="h-5 w-5 text-primary" />
@@ -301,7 +309,7 @@ export default function Schedule() {
             <div className="overflow-x-auto">
               <div className="min-w-[800px]">
                 {/* Simple Header */}
-                <div className="h-14 border-b border-border/50 bg-muted/30 dark:bg-muted/50 flex items-center px-4">
+                <div className="h-14 border-b-2 border-slate-300 dark:border-slate-700 bg-muted/30 dark:bg-muted/50 flex items-center px-4">
                   <span className="font-medium text-foreground">Staff</span>
                 </div>
 
@@ -312,9 +320,9 @@ export default function Schedule() {
                     .map((employee, index, array) => (
                       <div key={employee.id}>
                         {index > 0 && (
-                          <div className="h-0.5 bg-foreground/10 dark:bg-foreground/20 my-1.5"></div>
+                          <div className="h-0.5 bg-slate-300 dark:bg-slate-700 my-1.5"></div>
                         )}
-                        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] border-b border-border/50 hover:bg-accent/20 transition-colors">
+                        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] border-b-2 border-slate-300 dark:border-slate-700 hover:bg-accent/20 transition-colors">
                           {/* Staff Info */}
                           <div className="p-4 flex items-center space-x-3">
                             <Avatar className="w-10 h-10">
@@ -502,268 +510,277 @@ export default function Schedule() {
                   </div>
                 </div>
               ))}
-              {showAddStaff ? (
-                <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-medium">
-                      {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
-                    </h4>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => {
-                        setShowAddStaff(false);
-                        setEditingStaff(null);
-                        setStaffForm({
-                          name: '',
-                          role: 'Hair Stylist',
-                          email: '',
-                          phone: '',
-                          startTime: '09:00',
-                          endTime: '18:00',
-                          photo: '',
-                          specialties: []
-                        });
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <form onSubmit={handleAddStaff} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="staffName">Full Name</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="staffName"
-                            name="name"
-                            value={staffForm.name}
-                            onChange={handleStaffInputChange}
-                            placeholder="John Doe"
-                            className="pl-9"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="staffRole">Role</Label>
-                        <Select 
-                          value={staffForm.role}
-                          onValueChange={(value) => setStaffForm({...staffForm, role: value})}
-                        >
-                          <SelectTrigger className="w-full">
-                            <Briefcase className="h-4 w-4 mr-2 text-muted-foreground" />
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Hair Stylist">Hair Stylist</SelectItem>
-                            <SelectItem value="Barber">Barber</SelectItem>
-                            <SelectItem value="Beautician">Beautician</SelectItem>
-                            <SelectItem value="Nail Technician">Nail Technician</SelectItem>
-                            <SelectItem value="Massage Therapist">Massage Therapist</SelectItem>
-                            <SelectItem value="Receptionist">Receptionist</SelectItem>
-                            <SelectItem value="Manager">Manager</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="staffEmail">Email</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="staffEmail"
-                            name="email"
-                            type="email"
-                            value={staffForm.email}
-                            onChange={handleStaffInputChange}
-                            placeholder="john@example.com"
-                            className="pl-9"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="staffPhone">Phone</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="staffPhone"
-                            name="phone"
-                            type="tel"
-                            value={staffForm.phone}
-                            onChange={handleStaffInputChange}
-                            placeholder="+91 98765 43210"
-                            className="pl-9"
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="startTime">Start Time</Label>
-                        <div className="relative">
-                          <Clock3 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="startTime"
-                            name="startTime"
-                            type="time"
-                            value={staffForm.startTime}
-                            onChange={handleStaffInputChange}
-                            className="pl-9"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="endTime">End Time</Label>
-                        <div className="relative">
-                          <Clock4 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                          <Input
-                            id="endTime"
-                            name="endTime"
-                            type="time"
-                            value={staffForm.endTime}
-                            onChange={handleStaffInputChange}
-                            className="pl-9"
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Specialties</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {['Haircut', 'Coloring', 'Styling', 'Shaving', 'Facial', 'Manicure', 'Pedicure', 'Massage'].map(specialty => (
-                          <Button
-                            key={specialty}
-                            type="button"
-                            variant={staffForm.specialties.includes(specialty) ? 'default' : 'outline'}
-                            size="sm"
-                            className="h-8 text-xs"
-                            onClick={() => {
-                              setStaffForm(prev => ({
-                                ...prev,
-                                specialties: prev.specialties.includes(specialty)
-                                  ? prev.specialties.filter(s => s !== specialty)
-                                  : [...prev.specialties, specialty]
-                              }));
-                            }}
-                          >
-                            {staffForm.specialties.includes(specialty) && <Check className="h-3 w-3 mr-1" />}
-                            {specialty}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Staff Photo</Label>
-                      <div className="flex items-center space-x-4">
-                        <div className="relative h-20 w-20 rounded-full border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden">
-                          {staffForm.photo ? (
-                            <img 
-                              src={staffForm.photo} 
-                              alt="Staff preview" 
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="text-center p-2">
-                              <User className="h-6 w-6 mx-auto text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Preview</span>
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <input
-                            type="file"
-                            id="staffPhoto"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  setStaffForm(prev => ({
-                                    ...prev,
-                                    photo: event.target?.result as string
-                                  }));
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="mt-1"
-                            onClick={() => document.getElementById('staffPhoto')?.click()}
-                          >
-                            <Upload className="h-4 w-4 mr-2" />
-                            {staffForm.photo ? 'Change Photo' : 'Upload Photo'}
-                          </Button>
-                          {staffForm.photo && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="mt-1 ml-2 text-destructive hover:text-destructive"
-                              onClick={() => setStaffForm(prev => ({ ...prev, photo: '' }))}
-                            >
-                              <X className="h-4 w-4 mr-1" />
-                              Remove
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-2 pt-2">
-                      <Button 
-                        variant="outline" 
-                        type="button"
-                        onClick={() => {
-                          setShowAddStaff(false);
-                          setEditingStaff(null);
-                          setStaffForm({
-                            name: '',
-                            role: 'Hair Stylist',
-                            email: '',
-                            phone: '',
-                            startTime: '09:00',
-                            endTime: '18:00',
-                            photo: '',
-                            specialties: []
-                          });
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit">
-                        {editingStaff ? 'Update Staff' : 'Add Staff'}
-                      </Button>
-                    </div>
-                  </form>
-                </div>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  className="w-full mt-2"
-                  onClick={() => setShowAddStaff(true)}
-                >
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Add Staff Member
-                </Button>
-              )}
+              <Button 
+                variant="outline" 
+                className="w-full mt-2"
+                onClick={() => {
+                  setEditingStaff(null);
+                  setStaffForm({
+                    name: '',
+                    role: 'Hair Stylist',
+                    email: '',
+                    phone: '',
+                    startTime: '09:00',
+                    endTime: '18:00',
+                    photo: '',
+                    specialties: []
+                  });
+                  setShowAddStaff(true);
+                }}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Staff Member
+              </Button>
             </CardContent>
           </Card>
+
+          {/* Add / Edit Staff Pop-up Modal */}
+          <Dialog 
+            open={showAddStaff} 
+            onOpenChange={(open) => {
+              setShowAddStaff(open);
+              if (!open) {
+                setEditingStaff(null);
+                setStaffForm({
+                  name: '',
+                  role: 'Hair Stylist',
+                  email: '',
+                  phone: '',
+                  startTime: '09:00',
+                  endTime: '18:00',
+                  photo: '',
+                  specialties: []
+                });
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-primary" />
+                  {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingStaff 
+                    ? 'Update staff member details, schedule hours, and specialties.' 
+                    : 'Fill in the information to register a new staff member.'}
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleAddStaff} className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="staffName">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="staffName"
+                        name="name"
+                        value={staffForm.name}
+                        onChange={handleStaffInputChange}
+                        placeholder="John Doe"
+                        className="pl-9"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="staffRole">Role</Label>
+                    <Select 
+                      value={staffForm.role}
+                      onValueChange={(value) => setStaffForm({...staffForm, role: value})}
+                    >
+                      <SelectTrigger className="w-full">
+                        <Briefcase className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Hair Stylist">Hair Stylist</SelectItem>
+                        <SelectItem value="Barber">Barber</SelectItem>
+                        <SelectItem value="Beautician">Beautician</SelectItem>
+                        <SelectItem value="Nail Technician">Nail Technician</SelectItem>
+                        <SelectItem value="Massage Therapist">Massage Therapist</SelectItem>
+                        <SelectItem value="Receptionist">Receptionist</SelectItem>
+                        <SelectItem value="Manager">Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="staffEmail">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="staffEmail"
+                        name="email"
+                        type="email"
+                        value={staffForm.email}
+                        onChange={handleStaffInputChange}
+                        placeholder="john@example.com"
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="staffPhone">Phone</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="staffPhone"
+                        name="phone"
+                        type="tel"
+                        value={staffForm.phone}
+                        onChange={handleStaffInputChange}
+                        placeholder="+91 98765 43210"
+                        className="pl-9"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="startTime">Start Time</Label>
+                    <div className="relative">
+                      <Clock3 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="startTime"
+                        name="startTime"
+                        type="time"
+                        value={staffForm.startTime}
+                        onChange={handleStaffInputChange}
+                        className="pl-9"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="endTime">End Time</Label>
+                    <div className="relative">
+                      <Clock4 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="endTime"
+                        name="endTime"
+                        type="time"
+                        value={staffForm.endTime}
+                        onChange={handleStaffInputChange}
+                        className="pl-9"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Specialties</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Haircut', 'Coloring', 'Styling', 'Shaving', 'Facial', 'Manicure', 'Pedicure', 'Massage'].map(specialty => (
+                      <Button
+                        key={specialty}
+                        type="button"
+                        variant={staffForm.specialties.includes(specialty) ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => {
+                          setStaffForm(prev => ({
+                            ...prev,
+                            specialties: prev.specialties.includes(specialty)
+                              ? prev.specialties.filter(s => s !== specialty)
+                              : [...prev.specialties, specialty]
+                          }));
+                        }}
+                      >
+                        {staffForm.specialties.includes(specialty) && <Check className="h-3 w-3 mr-1" />}
+                        {specialty}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Staff Photo</Label>
+                  <div className="flex items-center space-x-4">
+                    <div className="relative h-20 w-20 rounded-full border-2 border-dashed border-muted-foreground/25 flex items-center justify-center overflow-hidden">
+                      {staffForm.photo ? (
+                        <img 
+                          src={staffForm.photo} 
+                          alt="Staff preview" 
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="text-center p-2">
+                          <User className="h-6 w-6 mx-auto text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Preview</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="file"
+                        id="staffPhoto"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setStaffForm(prev => ({
+                                ...prev,
+                                photo: event.target?.result as string
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="mt-1"
+                        onClick={() => document.getElementById('staffPhoto')?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {staffForm.photo ? 'Change Photo' : 'Upload Photo'}
+                      </Button>
+                      {staffForm.photo && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="mt-1 ml-2 text-destructive hover:text-destructive"
+                          onClick={() => setStaffForm(prev => ({ ...prev, photo: '' }))}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <DialogFooter className="flex justify-end space-x-2 pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    type="button"
+                    onClick={() => {
+                      setShowAddStaff(false);
+                      setEditingStaff(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {editingStaff ? 'Update Staff' : 'Add Staff'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           {/* Services Card */}
           <Card className="bg-gradient-card border-border/50 shadow-card">

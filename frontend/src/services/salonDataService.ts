@@ -9,19 +9,23 @@ export const isUuid = (value?: string | null) =>
 
 export async function getActiveShopId(): Promise<number> {
   if (cachedShopId) return cachedShopId;
-  if (!isSupabaseConfigured) throw new Error('Supabase is not configured');
+  if (!isSupabaseConfigured || !supabase) return 1;
 
-  const { data, error } = await supabase
-    .from('shops')
-    .select('id')
-    .eq('is_available', true)
-    .order('id')
-    .limit(1)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('shops')
+      .select('id')
+      .eq('is_available', true)
+      .order('id')
+      .limit(1)
+      .single();
 
-  if (error) throw error;
-  cachedShopId = Number(data.id);
-  return cachedShopId;
+    if (error || !data) return 1;
+    cachedShopId = Number(data.id);
+    return cachedShopId;
+  } catch (err) {
+    return 1;
+  }
 }
 
 export function toDatabaseTime(value: string): string {

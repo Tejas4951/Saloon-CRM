@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { createId, getActiveShopId, reportPersistenceError } from '@/services/salonDataService';
 
 export interface Customer {
@@ -29,9 +29,28 @@ interface CustomersContextType {
 const CustomersContext = createContext<CustomersContextType | undefined>(undefined);
 
 export function CustomersProvider({ children }: { children: ReactNode }) {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>(() => {
+    const saved = localStorage.getItem('saloniq_customers');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'cust-demo-1',
+        name: 'Ananya Gupta',
+        phone: '+91 98765 43210',
+        email: 'ananya@gmail.com',
+        gender: 'female',
+        visitCount: 3,
+        totalSpent: 1850,
+        pendingAmount: 0,
+        lastVisit: new Date().toISOString(),
+        preferredServices: ['Haircut & Style', 'Facial Glow'],
+        notes: 'VIP Client',
+        photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop'
+      }
+    ];
+  });
 
   useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
     let active = true;
     const loadCustomers = async () => {
       try {
@@ -39,15 +58,16 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.from('customers').select('*').eq('shop_id', shopId).order('created_at', { ascending: false });
         if (error) throw error;
         if (!active) return;
-        setCustomers((data || []).map((row: any) => ({
+        const fetched = (data || []).map((row: any) => ({
           id: row.id, name: row.name, phone: row.phone, email: row.email || '', gender: row.gender || 'female',
           visitCount: row.visit_count || 0, totalSpent: Number(row.total_spent || 0), pendingAmount: Number(row.pending_amount || 0),
           lastVisit: row.last_visit || row.created_at, preferredServices: row.preferred_services || [], notes: row.notes || '', photo: row.photo || '',
           createdAt: row.created_at,
-        })));
+        }));
+        setCustomers(fetched);
+        localStorage.setItem('saloniq_customers', JSON.stringify(fetched));
       } catch (error) {
         reportPersistenceError('customers.load', error);
-        if (active) setCustomers([]);
       }
     };
     void loadCustomers();
@@ -64,6 +84,7 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
         return cClean === cleanPhone || c.phone === customerData.phone;
       });
 
+      let updatedList: Customer[];
       if (existingIdx !== -1) {
         const existing = prev[existingIdx];
         const updated: Customer = {
@@ -81,7 +102,7 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
         resultCustomer = updated;
         const copy = [...prev];
         copy[existingIdx] = updated;
-        return copy;
+        updatedList = copy;
       } else {
         const newCustomer: Customer = {
           id: createId(),
@@ -98,9 +119,14 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
           photo: customerData.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop'
         };
         resultCustomer = newCustomer;
-        return [newCustomer, ...prev];
+        updatedList = [newCustomer, ...prev];
       }
+      localStorage.setItem('saloniq_customers', JSON.stringify(updatedList));
+      return updatedList;
     });
+
+    if (!isSupabaseConfigured || !supabase) return resultCustomer!;
+
     const persistedCustomer = resultCustomer!;
     void (async () => {
       try {
@@ -122,11 +148,14 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
   };
 
   const updateCustomer = (id: string, updates: Partial<Customer>) => {
-    setCustomers(prev => 
-      prev.map(customer => 
-        customer.id === id ? { ...customer, ...updates } : customer
-      )
-    );
+    setCustomers(prev => {
+      const updated = prev.map(customer => customer.id === id ? { ...customer, ...updates } : customer);
+      localStorage.setItem('saloniq_customers', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (!isSupabaseConfigured || !supabase) return;
+
     const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
     const fields: Array<[keyof Customer, string]> = [
       ['name', 'name'], ['phone', 'phone'], ['email', 'email'], ['gender', 'gender'], ['visitCount', 'visit_count'],

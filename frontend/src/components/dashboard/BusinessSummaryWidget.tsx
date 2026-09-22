@@ -26,7 +26,7 @@ export const BusinessSummaryWidget: React.FC = () => {
   ];
 
   return (
-    <Card className="border-border/60 shadow-sm">
+    <Card className="border-2 border-slate-300 dark:border-slate-700 shadow-md">
       <CardHeader className="p-4 pb-2">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <BarChart className="h-4 w-4 text-indigo-500" />
@@ -38,7 +38,7 @@ export const BusinessSummaryWidget: React.FC = () => {
           {summary.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between py-1.5 border-b border-border/40 last:border-0 text-xs"
+              className="flex items-center justify-between py-2 border-b-2 border-slate-200 dark:border-slate-700 last:border-0 text-xs"
             >
               <span className="text-muted-foreground font-medium">{item.label}</span>
               <div className="flex items-center gap-2">

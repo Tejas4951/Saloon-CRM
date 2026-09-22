@@ -30,7 +30,13 @@ import { NotificationsProvider } from "./contexts/NotificationsContext";
 import { StoreProvider } from "./contexts/StoreContext";
 import PublicPortal from "./pages/PublicPortal";
 import Reports from "./pages/Reports";
+import Expenses from "./pages/Expenses";
 import { ServicesProvider } from "./contexts/ServicesContext";
+import { AdminThemeProvider } from "./contexts/AdminThemeContext";
+import StylesManagement from "./pages/StylesManagement";
+import { StylesProvider } from "./contexts/StylesContext";
+import { PlansProvider } from "./contexts/PlansContext";
+import PlansPage from "./pages/PlansPage";
 
 const queryClient = new QueryClient();
 
@@ -105,7 +111,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <AuthProvider>
             <ServicesProvider>
             <CustomersProvider>
@@ -115,7 +121,10 @@ const App = () => {
                     <InventoryProvider>
                       <NotificationsProvider>
                         <StoreProvider>
-                          <Routes>
+                          <StylesProvider>
+                            <PlansProvider>
+                            <AdminThemeProvider>
+                            <Routes>
                             {/* Public Customer Portal (No Auth Required) */}
                             <Route path="/public" element={<PublicPortal />} />
                             <Route path="/shop" element={<PublicPortal />} />
@@ -158,12 +167,12 @@ const App = () => {
                             } />
                             {/* Regular Admin Routes */}
                             <Route path="/index" element={
-                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
                                 <Layout><Dashboard /></Layout>
                               </ProtectedRoute>
                             } />
                             <Route path="/booking" element={
-                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
                                 <Layout><Booking /></Layout>
                               </ProtectedRoute>
                             } />
@@ -171,7 +180,7 @@ const App = () => {
                               <Navigate to="/booking" replace />
                             } />
                             <Route path="/inventory" element={
-                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
                                 <Layout><Inventory /></Layout>
                               </ProtectedRoute>
                             } />
@@ -179,7 +188,7 @@ const App = () => {
                               <Navigate to="/inventory" replace />
                             } />
                             <Route path="/store" element={
-                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
                                 <Layout><Store /></Layout>
                               </ProtectedRoute>
                             } />
@@ -187,7 +196,7 @@ const App = () => {
                               <Navigate to="/store" replace />
                             } />
                             <Route path="/customers" element={
-                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
                                 <Layout><Customers /></Layout>
                               </ProtectedRoute>
                             } />
@@ -195,7 +204,7 @@ const App = () => {
                               <Navigate to="/customers" replace />
                             } />               
                             <Route path="/schedule" element={
-                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
                                 <Layout><Schedule /></Layout>
                               </ProtectedRoute>
                             } />
@@ -203,7 +212,7 @@ const App = () => {
                               <Navigate to="/schedule" replace />
                             } />
                             <Route path="/tally" element={
-                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
                                 <Layout><Tally /></Layout>
                               </ProtectedRoute>
                             } />
@@ -211,14 +220,44 @@ const App = () => {
                               <Navigate to="/tally" replace />
                             } />
                             <Route path="/reports" element={
-                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
                                 <Layout><Reports /></Layout>
                               </ProtectedRoute>
                             } />
+                            <Route path="/index/reports" element={
+                              <Navigate to="/reports" replace />
+                            } />
+                            <Route path="/expenses" element={
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+                                <Layout><Expenses /></Layout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/index/expenses" element={
+                              <Navigate to="/expenses" replace />
+                            } />
+                            <Route path="/plans" element={
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+                                <Layout><PlansPage /></Layout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/index/plans" element={
+                              <Navigate to="/plans" replace />
+                            } />
                             <Route path="/settings" element={
-                              <ProtectedRoute allowedRoles={['ADMIN']}>
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
                                 <Layout><Profile /></Layout>
                               </ProtectedRoute>
+                            } />
+                            <Route path="/index/settings" element={
+                              <Navigate to="/settings" replace />
+                            } />
+                             <Route path="/styles" element={
+                              <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}>
+                                <Layout><StylesManagement /></Layout>
+                              </ProtectedRoute>
+                            } />
+                            <Route path="/index/styles" element={
+                              <Navigate to="/styles" replace />
                             } />
                             <Route path="/profile" element={
                               <ProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'STAFF']}>
@@ -233,7 +272,10 @@ const App = () => {
                             } />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
-                        </StoreProvider>
+                        </AdminThemeProvider>
+                        </PlansProvider>
+                      </StylesProvider>
+                    </StoreProvider>
                       </NotificationsProvider>
                     </InventoryProvider>
                   </StaffProvider>

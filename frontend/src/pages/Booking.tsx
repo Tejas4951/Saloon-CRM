@@ -187,37 +187,37 @@ export default function Booking() {
       {/* Step 1: Select Services */}
       {step === 1 && (
         <div className="space-y-6">
-          <Card className="bg-gradient-card border-border/50 shadow-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Select Services</CardTitle>
+          <Card className="bg-card border-2 border-slate-300 dark:border-slate-700 shadow-md">
+            <CardHeader className="pb-3 border-b-2 border-slate-300 dark:border-slate-700">
+              <CardTitle className="text-lg font-bold">Select Services</CardTitle>
               <CardDescription className="text-xs">
                 Choose the services you'd like to book
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {services.map((service) => (
                   <div
                     key={service.id}
                     onClick={() => handleServiceToggle(service.id)}
-                    className={`p-3 rounded-md border cursor-pointer transition-all text-sm ${
+                    className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all text-sm ${
                       selectedServices.includes(service.id)
-                        ? 'border-primary bg-primary/5 shadow-soft'
-                        : 'border-border hover:border-primary/50 hover:shadow-soft'
+                        ? 'border-amber-500 bg-amber-500/10 shadow-md'
+                        : 'border-slate-300 dark:border-slate-700 hover:border-amber-500/50 hover:shadow-sm'
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="font-medium">{service.name}</h3>
+                        <h3 className="font-bold">{service.name}</h3>
                         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                           {service.description}
                         </p>
-                        <div className="flex items-center space-x-3 mt-1.5">
+                        <div className="flex items-center space-x-3 mt-2">
                           <Badge variant="secondary" className="text-xs h-5">
                             <Clock className="h-2.5 w-2.5 mr-1" />
                             {service.duration}min
                           </Badge>
-                          <span className="font-medium text-primary text-sm">
+                          <span className="font-extrabold text-amber-500 text-sm">
                             {formatPrice(service.price)}
                           </span>
                         </div>
@@ -228,30 +228,30 @@ export default function Booking() {
               </div>
               
               {selectedServices.length > 0 && (
-                <div className="mt-4 p-3 bg-accent/30 rounded-md">
+                <div className="mt-4 p-4 bg-muted/40 rounded-xl border-2 border-amber-500/40">
                   <div className="flex justify-between items-center">
                     <div>
-                      <div className="text-sm font-medium">
+                      <div className="text-sm font-bold">
                         {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} selected
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {totalDuration} minutes total
                       </div>
                     </div>
-                    <div className="text-lg font-bold text-primary">
+                    <div className="text-lg font-extrabold text-amber-500">
                       {formatPrice(totalPrice)}
                     </div>
                   </div>
                 </div>
               )}
               
-              <div className="flex justify-end mt-4">
+              <div className="flex justify-end mt-6 pt-4 border-t-2 border-slate-300 dark:border-slate-700">
                 <Button 
                   onClick={() => setStep(2)}
                   disabled={selectedServices.length === 0}
-                  className="min-w-32"
+                  className="min-w-32 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold"
                 >
-                  Next
+                  Next →
                 </Button>
               </div>
             </CardContent>
@@ -262,14 +262,14 @@ export default function Booking() {
       {/* Step 2: Combined Staff & Time Selection */}
       {step === 2 && (
         <div className="space-y-6">
-          <Card className="bg-gradient-card border-border/50 shadow-card">
-            <CardHeader>
-              <CardTitle>Select Staff & Time</CardTitle>
-              <CardDescription>
+          <Card className="bg-card border-2 border-slate-300 dark:border-slate-700 shadow-md">
+            <CardHeader className="border-b-2 border-slate-300 dark:border-slate-700">
+              <CardTitle className="font-bold">Select Staff & Time</CardTitle>
+              <CardDescription className="text-xs">
                 Choose your preferred staff member and time slot for the appointment
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <StaffAndTimeSelector
                 selectedEmployee={selectedEmployee}
                 selectedTime={selectedTime}
@@ -283,23 +283,21 @@ export default function Booking() {
         </div>
       )}
 
-
-
       {/* Step 3: Confirm */}
       {step === 3 && (
         <div className="space-y-6">
-          <Card className="bg-gradient-card border-border/50 shadow-card">
-            <CardHeader>
-              <CardTitle>Confirm Your Appointment</CardTitle>
-              <CardDescription>
+          <Card className="bg-card border-2 border-slate-300 dark:border-slate-700 shadow-md">
+            <CardHeader className="border-b-2 border-slate-300 dark:border-slate-700">
+              <CardTitle className="font-bold">Confirm Your Appointment</CardTitle>
+              <CardDescription className="text-xs">
                 Please review your booking details before confirming
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-4">
               {/* Customer Selection */}
               <div className="space-y-2">
-                <h3 className="font-semibold">Customer</h3>
-                <div className="flex items-center justify-between p-4 bg-accent/20 rounded-lg">
+                <h3 className="font-bold text-sm">Customer</h3>
+                <div className="flex items-center justify-between p-4 bg-muted/40 rounded-xl border-2 border-slate-300 dark:border-slate-700">
                   {selectedCustomer ? (
                     <div className="flex items-center space-x-3">
                       <Avatar>
@@ -314,38 +312,38 @@ export default function Booking() {
                         <AvatarFallback>{selectedCustomer.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{selectedCustomer.name}</p>
-                        <p className="text-sm text-muted-foreground">{formatPhoneNumber(selectedCustomer.phone.replace(/\D/g,''))}</p>
+                        <p className="font-bold">{selectedCustomer.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatPhoneNumber(selectedCustomer.phone.replace(/\D/g,''))}</p>
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-sm text-muted-foreground">No customer selected</p>
+                      <p className="text-xs text-muted-foreground">No customer selected</p>
                     </div>
                   )}
                   <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline">
+                      <Button variant="outline" className="border-2 border-slate-300 dark:border-slate-700 font-bold text-xs">
                         <User className="h-4 w-4 mr-2" />
                         {selectedCustomer ? 'Change Customer' : 'Select Customer'}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                    <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col border-2 border-slate-300 dark:border-slate-700">
                       <DialogHeader>
-                        <DialogTitle>Select Customer</DialogTitle>
+                        <DialogTitle className="font-bold">Select Customer</DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
                         <div className="relative">
                           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                             placeholder="Search customers..."
-                            className="pl-9"
+                            className="pl-9 text-xs"
                             value={customerSearch}
                             onChange={(e) => setCustomerSearch(e.target.value)}
                           />
                         </div>
-                        <div className="border rounded-lg overflow-hidden flex-1 overflow-y-auto">
-                          <div className="divide-y">
+                        <div className="border-2 border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden flex-1 overflow-y-auto">
+                          <div className="divide-y divide-slate-200 dark:divide-slate-800">
                             {filteredCustomers.map((customer) => (
                                 <div 
                                   key={customer.id}
@@ -369,11 +367,11 @@ export default function Booking() {
                                       <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div>
-                                      <p className="font-medium">{customer.name}</p>
-                                      <p className="text-sm text-muted-foreground">{formatPhoneNumber(customer.phone.replace(/\D/g,''))}</p>
+                                      <p className="font-bold">{customer.name}</p>
+                                      <p className="text-xs text-muted-foreground">{formatPhoneNumber(customer.phone.replace(/\D/g,''))}</p>
                                     </div>
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
+                                  <div className="text-xs text-muted-foreground font-semibold">
                                     {customer.visitCount} visits
                                   </div>
                                 </div>
@@ -382,9 +380,8 @@ export default function Booking() {
                         </div>
                         <AddCustomerButton 
                           variant="outline" 
-                          className="w-full"
+                          className="w-full border-2 border-slate-300 dark:border-slate-700 font-bold text-xs"
                           onCustomerAdded={() => {
-                            // Refresh the customers list after adding a new one
                             setCustomerSearch('');
                           }}
                         >
@@ -399,15 +396,15 @@ export default function Booking() {
 
               {/* Services Summary */}
               <div>
-                <h3 className="font-semibold mb-3">Services</h3>
+                <h3 className="font-bold text-sm mb-3">Services</h3>
                 <div className="space-y-2">
                   {selectedServicesData.map((service) => (
-                    <div key={service.id} className="flex justify-between items-center p-3 bg-accent/50 rounded-lg">
+                    <div key={service.id} className="flex justify-between items-center p-3.5 bg-muted/40 rounded-xl border-2 border-slate-300 dark:border-slate-700">
                       <div>
-                        <div className="font-medium">{service.name}</div>
-                        <div className="text-sm text-muted-foreground">{service.duration} minutes</div>
+                        <div className="font-bold">{service.name}</div>
+                        <div className="text-xs text-muted-foreground">{service.duration} minutes</div>
                       </div>
-                      <div className="font-semibold">{formatPrice(service.price)}</div>
+                      <div className="font-extrabold text-amber-500">{formatPrice(service.price)}</div>
                     </div>
                   ))}
                 </div>
@@ -416,8 +413,8 @@ export default function Booking() {
               {/* Staff & Time Summary */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-semibold mb-3">Staff Member</h3>
-                  <div className="flex items-center space-x-3 p-3 bg-accent/50 rounded-lg">
+                  <h3 className="font-bold text-sm mb-3">Staff Member</h3>
+                  <div className="flex items-center space-x-3 p-3.5 bg-muted/40 rounded-xl border-2 border-slate-300 dark:border-slate-700">
                     <Avatar className="w-12 h-12">
                       <AvatarImage src={selectedEmployeeData?.photo} alt={selectedEmployeeData?.name} />
                       <AvatarFallback>
@@ -425,24 +422,24 @@ export default function Booking() {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium">{selectedEmployeeData?.name}</div>
-                      <div className="text-sm text-muted-foreground">{selectedEmployeeData?.role}</div>
+                      <div className="font-bold">{selectedEmployeeData?.name}</div>
+                      <div className="text-xs text-muted-foreground">{selectedEmployeeData?.role}</div>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-3">Appointment Time</h3>
-                  <div className="p-3 bg-accent/50 rounded-lg">
+                  <h3 className="font-bold text-sm mb-3">Appointment Time</h3>
+                  <div className="p-3.5 bg-muted/40 rounded-xl border-2 border-slate-300 dark:border-slate-700">
                     <div className="flex items-center space-x-2">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span className="font-medium">Today</span>
+                      <Calendar className="h-4 w-4 text-amber-500" />
+                      <span className="font-bold text-xs">Today</span>
                     </div>
                     <div className="flex items-center space-x-2 mt-1">
-                      <Clock className="h-4 w-4 text-primary" />
-                      <span className="font-medium">{selectedTime}</span>
+                      <Clock className="h-4 w-4 text-amber-500" />
+                      <span className="font-bold text-xs">{selectedTime}</span>
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1">
+                    <div className="text-xs text-muted-foreground mt-1">
                       Duration: {totalDuration} minutes
                     </div>
                   </div>
@@ -450,10 +447,10 @@ export default function Booking() {
               </div>
 
               {/* Total */}
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center text-xl font-bold">
+              <div className="border-t-2 border-slate-300 dark:border-slate-700 pt-4">
+                <div className="flex justify-between items-center text-xl font-black">
                   <span>Total Amount</span>
-                  <span className="text-primary">{formatPrice(totalPrice)}</span>
+                  <span className="text-amber-500">{formatPrice(totalPrice)}</span>
                 </div>
               </div>
 

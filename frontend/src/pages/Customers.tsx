@@ -13,6 +13,7 @@ import { useCustomers } from "@/contexts/CustomersContext";
 import type { Customer } from "@/contexts/CustomersContext";
 import { format } from "date-fns";
 import { useAppointments } from "@/contexts/AppointmentsContext";
+import { useTally } from '@/contexts/TallyContext';
 
 // Define Transaction interface
 interface Transaction {
@@ -22,40 +23,6 @@ interface Transaction {
   items: Array<{ id: string; name: string; price: number }>;
   total: number;
 }
-
-// Mock transactions data (temporary until we have a transactions context)
-const mockTransactions = [
-  {
-    id: '1',
-    customerId: '1',
-    date: '2023-06-15',
-    items: [
-      { id: '1', name: 'Haircut', price: 500 },
-      { id: '2', name: 'Beard Trim', price: 200 }
-    ],
-    total: 700
-  },
-  {
-    id: '2',
-    customerId: '1',
-    date: '2023-05-20',
-    items: [
-      { id: '1', name: 'Hair Color', price: 1500 },
-      { id: '3', name: 'Hair Spa', price: 1000 }
-    ],
-    total: 2500
-  },
-  {
-    id: '3',
-    customerId: '2',
-    date: '2023-06-10',
-    items: [
-      { id: '4', name: 'Facial', price: 1200 },
-      { id: '5', name: 'Threading', price: 300 }
-    ],
-    total: 1500
-  }
-];
 
 type GenderFilter = 'all' | 'male' | 'female';
 type SortBy = 'name' | 'visits' | 'spent' | 'lastVisit';
@@ -69,6 +36,7 @@ export default function Customers() {
   const navigate = useNavigate();
   const { customers } = useCustomers();
   const { setSelectedCustomerId } = useAppointments();
+  const { tallyItems } = useTally();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("name");
   const [genderFilter, setGenderFilter] = useState<GenderFilter>('all');
@@ -162,10 +130,19 @@ export default function Customers() {
   };
 
   const getRecentTransactions = (customerId: string): Transaction[] => {
-    return (mockTransactions as Transaction[])
-      .filter(tx => tx.customerId === customerId)
+    const customer = customers.find(item => item.id === customerId);
+    if (!customer) return [];
+    return tallyItems
+      .filter(item => item.customerPhone === customer.phone || item.customerName.toLowerCase() === customer.name.toLowerCase())
+      .map(item => ({
+        id: item.id,
+        customerId,
+        date: item.date,
+        items: item.services.map((service, index) => ({ id: `${item.id}-${index}`, name: service.name, price: service.price })),
+        total: item.totalCost,
+      }))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 2); // Show only 2 most recent
+      .slice(0, 2);
   };
 
   return (
@@ -183,7 +160,7 @@ export default function Customers() {
       </div>
 
       {/* Filters */}
-      <Card className="bg-gradient-card border-border/50 shadow-card">
+      <Card className="bg-gradient-card border-2 border-slate-300 dark:border-slate-700 shadow-md">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
             {/* Search */}
@@ -278,11 +255,11 @@ export default function Customers() {
       </div>
 
       {/* Customers Grid */}
-      <div className={viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : 'space-y-2'}>
+      <div className={viewMode === 'grid' ? 'grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch' : 'space-y-2'}>
         {filteredCustomers.map((customer) => {
           if (viewMode === 'list') {
             return (
-              <Card key={customer.id} className="bg-card/50 dark:bg-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
+              <Card key={customer.id} className="bg-card/50 dark:bg-card border-2 border-slate-300 dark:border-slate-700 shadow-md hover:shadow-glow transition-all duration-300">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
@@ -328,7 +305,7 @@ export default function Customers() {
                       )}
                     </div>
                   </div>
-                  <div className="mt-3 pt-3 border-t border-border/50">
+                  <div className="mt-3 pt-3 border-t-2 border-slate-300 dark:border-slate-700">
                     <div className="text-sm">
                       <span className="text-muted-foreground">Preferred Services: </span>
                       <span className="font-medium">{customer.preferredServices.join(', ')}</span>
@@ -350,7 +327,7 @@ export default function Customers() {
           const recentTransactions = getRecentTransactions(customer.id);
           
           return (
-            <Card key={customer.id} className="bg-card/50 dark:bg-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300 group">
+            <Card key={customer.id} className="bg-card/50 dark:bg-card border-2 border-slate-300 dark:border-slate-700 shadow-md hover:shadow-glow transition-all duration-300 group flex flex-col justify-between h-full min-h-[460px]">
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
@@ -398,111 +375,113 @@ export default function Customers() {
                 </div>
               </CardHeader>
               
-              <CardContent className="space-y-4">
-                {/* Stats Row - 4 Cards including Pending */}
-                <div className="grid grid-cols-4 gap-2.5 text-center">
-                  <div className="p-2.5 bg-accent/50 rounded-lg">
-                    <div className="text-base font-bold text-primary">{customer.visitCount}</div>
-                    <div className="text-[11px] text-muted-foreground">Visits</div>
-                  </div>
-                  <div className="p-2.5 bg-accent/50 rounded-lg">
-                    <div className="text-base font-bold text-primary">
-                      ₹{customer.totalSpent.toLocaleString('en-IN')}
+              <CardContent className="flex-1 flex flex-col justify-between space-y-4">
+                <div className="space-y-4 flex-1">
+                  {/* Stats Row - 4 Cards including Pending */}
+                  <div className="grid grid-cols-4 gap-2.5 text-center">
+                    <div className="p-2.5 bg-accent/50 rounded-lg">
+                      <div className="text-base font-bold text-primary">{customer.visitCount}</div>
+                      <div className="text-[11px] text-muted-foreground">Visits</div>
                     </div>
-                    <div className="text-[11px] text-muted-foreground">Spent</div>
-                  </div>
-                  <div 
-                    className={`p-2.5 rounded-lg border cursor-pointer transition-colors ${
-                      (customer.pendingAmount || 0) > 0 
-                        ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 hover:bg-rose-100' 
-                        : 'bg-accent/50 border-transparent'
-                    }`}
-                    onClick={() => {
-                      setSelectedProfileCustomer(customer);
-                      setIsProfileModalOpen(true);
-                    }}
-                  >
-                    <div className="text-base font-extrabold">
-                      ₹{(customer.pendingAmount || 0).toLocaleString('en-IN')}
+                    <div className="p-2.5 bg-accent/50 rounded-lg">
+                      <div className="text-base font-bold text-primary">
+                        ₹{customer.totalSpent.toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">Spent</div>
                     </div>
-                    <div className="text-[11px] font-semibold">Pending</div>
-                  </div>
-                  <div className="p-2.5 bg-accent/50 rounded-lg">
-                    <div className="text-base font-bold text-primary">
-                      {Math.floor((Date.now() - new Date(customer.lastVisit).getTime()) / (1000 * 60 * 60 * 24))}
+                    <div 
+                      className={`p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                        (customer.pendingAmount || 0) > 0 
+                          ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 hover:bg-rose-100' 
+                          : 'bg-accent/50 border-transparent'
+                      }`}
+                      onClick={() => {
+                        setSelectedProfileCustomer(customer);
+                        setIsProfileModalOpen(true);
+                      }}
+                    >
+                      <div className="text-base font-extrabold">
+                        ₹{(customer.pendingAmount || 0).toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-[11px] font-semibold">Pending</div>
                     </div>
-                    <div className="text-[11px] text-muted-foreground">Days ago</div>
+                    <div className="p-2.5 bg-accent/50 rounded-lg">
+                      <div className="text-base font-bold text-primary">
+                        {Math.floor((Date.now() - new Date(customer.lastVisit).getTime()) / (1000 * 60 * 60 * 24))}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">Days ago</div>
+                    </div>
                   </div>
-                </div>
 
-                {/* Pending Amount Alert Box */}
-                {customer.pendingAmount && customer.pendingAmount > 0 ? (
-                  <div 
-                    className="p-2.5 bg-rose-50 dark:bg-rose-950/40 rounded-lg border border-rose-200 dark:border-rose-900/60 flex items-center justify-between text-xs cursor-pointer hover:bg-rose-100/60 transition-colors"
-                    onClick={() => {
-                      setSelectedProfileCustomer(customer);
-                      setIsProfileModalOpen(true);
-                    }}
-                  >
-                    <span className="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" /> Pending Payment:
-                    </span>
-                    <span className="font-extrabold text-rose-700 dark:text-rose-300 text-sm underline">
-                      ₹{customer.pendingAmount.toLocaleString('en-IN')} (Click for details)
-                    </span>
-                  </div>
-                ) : null}
+                  {/* Pending Amount Alert Box */}
+                  {customer.pendingAmount && customer.pendingAmount > 0 ? (
+                    <div 
+                      className="p-2.5 bg-rose-50 dark:bg-rose-950/40 rounded-lg border border-rose-200 dark:border-rose-900/60 flex items-center justify-between text-xs cursor-pointer hover:bg-rose-100/60 transition-colors"
+                      onClick={() => {
+                        setSelectedProfileCustomer(customer);
+                        setIsProfileModalOpen(true);
+                      }}
+                    >
+                      <span className="font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" /> Pending Payment:
+                      </span>
+                      <span className="font-extrabold text-rose-700 dark:text-rose-300 text-sm underline">
+                        ₹{customer.pendingAmount.toLocaleString('en-IN')} (Click for details)
+                      </span>
+                    </div>
+                  ) : null}
 
-                {/* Preferred Services */}
-                <div>
-                  <div className="text-sm font-medium mb-2 flex items-center">
-                    <Star className="h-4 w-4 mr-1 text-primary" />
-                    Preferred Services
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {customer.preferredServices.map((service) => (
-                      <Badge key={service} variant="secondary" className="text-xs">
-                        {service}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Recent Activity */}
-                {recentTransactions.length > 0 && (
+                  {/* Preferred Services */}
                   <div>
                     <div className="text-sm font-medium mb-2 flex items-center">
-                      <Calendar className="h-4 w-4 mr-1 text-primary" />
-                      Recent Activity
+                      <Star className="h-4 w-4 mr-1 text-primary" />
+                      Preferred Services
                     </div>
-                    <div className="space-y-2">
-                      {recentTransactions.map((transaction) => (
-                        <div key={transaction.id} className="flex justify-between items-center text-xs p-2 bg-accent/30 rounded">
-                          <div>
-                            <div className="font-medium">{transaction.items[0].name}</div>
-                            <div className="text-muted-foreground">{transaction.date}</div>
-                          </div>
-                          <div className="font-medium text-primary">
-                            ₹{transaction.total.toLocaleString('en-IN')}
-                          </div>
-                        </div>
+                    <div className="flex flex-wrap gap-1">
+                      {customer.preferredServices.map((service) => (
+                        <Badge key={service} variant="secondary" className="text-xs">
+                          {service}
+                        </Badge>
                       ))}
                     </div>
                   </div>
-                )}
 
-                {/* Notes */}
-                {customer.notes && (
-                  <div>
-                    <div className="text-sm font-medium mb-1">Notes</div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {customer.notes}
-                    </p>
-                  </div>
-                )}
+                  {/* Recent Activity */}
+                  {recentTransactions.length > 0 && (
+                    <div>
+                      <div className="text-sm font-medium mb-2 flex items-center">
+                        <Calendar className="h-4 w-4 mr-1 text-primary" />
+                        Recent Activity
+                      </div>
+                      <div className="space-y-2">
+                        {recentTransactions.map((transaction) => (
+                          <div key={transaction.id} className="flex justify-between items-center text-xs p-2 bg-accent/30 rounded">
+                            <div>
+                              <div className="font-medium">{transaction.items[0].name}</div>
+                              <div className="text-muted-foreground">{transaction.date}</div>
+                            </div>
+                            <div className="font-medium text-primary">
+                              ₹{transaction.total.toLocaleString('en-IN')}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {customer.notes && (
+                    <div>
+                      <div className="text-sm font-medium mb-1">Notes</div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {customer.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Actions */}
-                <div className="flex space-x-2 pt-2 border-t border-border/50">
+                <div className="flex space-x-2 pt-4 border-t border-slate-300 dark:border-slate-700 mt-auto">
                   <Button 
                     size="sm" 
                     variant="outline" 

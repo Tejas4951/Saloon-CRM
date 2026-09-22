@@ -19,7 +19,10 @@ import {
   DollarSign,
   Package,
   Layers,
-  ChevronRight
+  ChevronRight,
+  BarChart3,
+  TrendingUp,
+  CalendarDays
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +33,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as ThemeCalendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 import { useStore, StoreProduct, StoreOrder } from '@/contexts/StoreContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -198,16 +204,62 @@ export default function Store() {
     return ord.orderStatus === orderStatusFilter;
   });
 
+  // Store Sales Analytics Modal state
+  const [isSalesAnalyticsOpen, setIsSalesAnalyticsOpen] = useState(false);
+  const [salesTimeframe, setSalesTimeframe] = useState<'daily' | 'monthly' | 'yearly'>('daily');
+  const [selectedSalesDate, setSelectedSalesDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedSalesMonth, setSelectedSalesMonth] = useState<string>(String(new Date().getMonth() + 1).padStart(2, '0'));
+  const [selectedSalesYear, setSelectedSalesYear] = useState<string>(String(new Date().getFullYear()));
+
   const totalStoreRevenue = orders
     .filter(o => o.orderStatus === 'completed' || o.paymentStatus === 'completed')
     .reduce((sum, o) => sum + o.totalAmount, 0);
 
   const pendingOrdersCount = orders.filter(o => o.orderStatus === 'pending' || o.orderStatus === 'processing').length;
 
+  // Analytics filtering logic by Daily, Monthly, Yearly
+  const filteredAnalyticsOrders = orders.filter(ord => {
+    if (!ord.orderDate) return true;
+    const orderDateStr = ord.orderDate.split('T')[0];
+    if (salesTimeframe === 'daily') {
+      return orderDateStr === selectedSalesDate;
+    } else if (salesTimeframe === 'monthly') {
+      const targetMonthStr = `${selectedSalesYear}-${selectedSalesMonth.padStart(2, '0')}`;
+      return orderDateStr.startsWith(targetMonthStr);
+    } else if (salesTimeframe === 'yearly') {
+      return orderDateStr.startsWith(selectedSalesYear);
+    }
+    return true;
+  });
+
+  const analyticsOrdersToDisplay = filteredAnalyticsOrders.length > 0 ? filteredAnalyticsOrders : orders;
+  const totalAnalyticsRevenue = analyticsOrdersToDisplay.reduce((sum, o) => sum + o.totalAmount, 0);
+  const totalAnalyticsOrders = analyticsOrdersToDisplay.length;
+  const avgOrderValue = totalAnalyticsOrders > 0 ? Math.round(totalAnalyticsRevenue / totalAnalyticsOrders) : 0;
+  const completedPaymentsCount = analyticsOrdersToDisplay.filter(o => o.paymentStatus === 'completed').length;
+
+  const productSalesMap: { [key: string]: { name: string; quantity: number; revenue: number; image: string } } = {};
+  analyticsOrdersToDisplay.forEach(order => {
+    order.items.forEach(item => {
+      if (!productSalesMap[item.productId]) {
+        productSalesMap[item.productId] = {
+          name: item.productName,
+          quantity: 0,
+          revenue: 0,
+          image: item.productImage
+        };
+      }
+      productSalesMap[item.productId].quantity += item.quantity;
+      productSalesMap[item.productId].revenue += (item.price * item.quantity);
+    });
+  });
+
+  const topSellingProducts = Object.values(productSalesMap).sort((a, b) => b.revenue - a.revenue);
+
   return (
     <div className="space-y-6 pb-12">
       {/* Header Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card/60 dark:bg-card/40 p-5 rounded-xl border border-border/60 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card/60 dark:bg-card/40 p-5 rounded-xl border-2 border-slate-300 dark:border-slate-700 shadow-md">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <StoreIcon className="h-6 w-6 text-amber-500" />
@@ -243,42 +295,79 @@ export default function Store() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-border/60 shadow-xs bg-card">
+        {/* Card 1: Store Products Posted -> Routes to Posted Products Catalog tab */}
+        <Card 
+          onClick={() => setActiveTab('products')} 
+          className={cn(
+            "border-2 border-slate-300 dark:border-slate-700 shadow-md bg-card cursor-pointer transition-all hover:shadow-lg hover:border-blue-500/50 group",
+            activeTab === 'products' && "ring-2 ring-blue-500/40 border-blue-500/50"
+          )}
+        >
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Store Products Posted</p>
+              <p className="text-xs text-muted-foreground font-medium flex items-center gap-1 group-hover:text-blue-600 transition-colors">
+                Store Products Posted
+                <ChevronRight className="h-3 w-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </p>
               <h3 className="text-xl font-extrabold text-foreground mt-0.5">{products.length} Items</h3>
-              <p className="text-[11px] text-emerald-600 font-semibold mt-1">Live on Public Store</p>
+              <p className="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
+                <span>Live on Public Store</span>
+                <span className="text-[10px] text-muted-foreground font-normal">(Click to View Catalog)</span>
+              </p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-600 group-hover:scale-105 transition-transform">
               <ShoppingBag className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-amber-500/40 bg-amber-50/30 dark:bg-amber-950/20 shadow-xs">
+        {/* Card 2: Active Customer Orders -> Routes to Customer Orders tab */}
+        <Card 
+          onClick={() => setActiveTab('orders')} 
+          className={cn(
+            "border-2 border-amber-500/60 bg-amber-50/30 dark:bg-amber-950/20 shadow-md cursor-pointer transition-all hover:shadow-lg hover:border-amber-500/80 group",
+            activeTab === 'orders' && "ring-2 ring-amber-500/50 border-amber-500"
+          )}
+        >
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">Active Customer Orders</p>
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1 group-hover:text-amber-600 transition-colors">
+                Active Customer Orders
+                <ChevronRight className="h-3 w-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+              </p>
               <h3 className="text-xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">{pendingOrdersCount} Orders</h3>
-              <p className="text-[11px] text-amber-700/80 dark:text-amber-300/80 mt-1">Needs fulfill / delivery</p>
+              <p className="text-[11px] text-amber-700/80 dark:text-amber-300/80 mt-1 flex items-center gap-1">
+                <span>Needs fulfill / delivery</span>
+                <span className="text-[10px] font-bold text-amber-600">(Click to View Orders)</span>
+              </p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-600">
+            <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-600 group-hover:scale-105 transition-transform">
               <Clock className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 shadow-xs bg-card">
+        {/* Card 3: Total Store Sales -> Opens Store Sales Analytics Dialog */}
+        <Card 
+          onClick={() => setIsSalesAnalyticsOpen(true)} 
+          className="border-2 border-emerald-500/60 bg-emerald-50/20 dark:bg-emerald-950/20 shadow-md cursor-pointer transition-all hover:shadow-lg hover:border-emerald-500/80 group"
+        >
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground font-medium">Total Store Sales</p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1 group-hover:text-emerald-600 transition-colors">
+                Total Store Sales
+                <BarChart3 className="h-3.5 w-3.5 ml-0.5 text-emerald-500" />
+              </p>
               <h3 className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
                 ₹{totalStoreRevenue.toLocaleString('en-IN')}
               </h3>
-              <p className="text-[11px] text-muted-foreground mt-1">Customer store purchases</p>
+              <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80 mt-1 flex items-center gap-1 font-semibold">
+                <span>Analytics Report</span>
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300">(Daily / Monthly / Yearly)</span>
+                <ChevronRight className="h-3 w-3" />
+              </p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-600 group-hover:scale-105 transition-transform">
               <DollarSign className="h-5 w-5" />
             </div>
           </CardContent>
@@ -287,8 +376,8 @@ export default function Store() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="products" value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
-          <TabsList className="bg-muted/60 p-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b-2 border-slate-300 dark:border-slate-700 pb-3">
+          <TabsList className="bg-muted/60 p-1 border-2 border-slate-300 dark:border-slate-700">
             <TabsTrigger value="products" className="text-xs sm:text-sm font-semibold flex items-center gap-1.5">
               <ShoppingBag className="h-4 w-4" />
               <span>Posted Products Catalog ({products.length})</span>
@@ -349,7 +438,7 @@ export default function Store() {
         <TabsContent value="products" className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredProducts.map(product => (
-              <Card key={product.id} className="border-border/70 shadow-xs hover:shadow-md transition-all overflow-hidden flex flex-col justify-between bg-card">
+              <Card key={product.id} className="border-2 border-slate-300 dark:border-slate-700 shadow-md hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between bg-card">
                 <div>
                   <div className="relative h-44 w-full bg-muted/30 overflow-hidden">
                     <img 
@@ -865,6 +954,275 @@ export default function Store() {
           <DialogFooter className="pt-2">
             <Button variant="outline" size="sm" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
             <Button variant="destructive" size="sm" onClick={handleDeleteConfirm}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal 4: Store Sales Analytics & Reports */}
+      <Dialog open={isSalesAnalyticsOpen} onOpenChange={setIsSalesAnalyticsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 border-border/80 bg-card shadow-2xl">
+          <DialogHeader className="border-b pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 grid place-items-center text-emerald-600">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
+                    Store Sales Analytics & Revenue Reports
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                    Analyze daily, monthly, and yearly online salon store performance, revenue trends, and top products.
+                  </DialogDescription>
+                </div>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-6 pt-2">
+            {/* Timeframe & Date Selector Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 rounded-xl bg-muted/40 border border-border/60">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Analytics Period:</Label>
+                <div className="flex bg-background border border-border/60 rounded-lg p-1 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => setSalesTimeframe('daily')}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
+                      salesTimeframe === 'daily' ? "bg-amber-500 text-slate-950 shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Daily
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSalesTimeframe('monthly')}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
+                      salesTimeframe === 'monthly' ? "bg-amber-500 text-slate-950 shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Monthly
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSalesTimeframe('yearly')}
+                    className={cn(
+                      "px-3 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer",
+                      salesTimeframe === 'yearly' ? "bg-amber-500 text-slate-950 shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Yearly
+                  </button>
+                </div>
+              </div>
+
+              {/* Date / Month / Year Specific Controls */}
+              <div className="flex items-center gap-2">
+                {salesTimeframe === 'daily' && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs font-semibold">Select Date:</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 bg-background border-border/60 text-foreground font-semibold text-xs px-3 shadow-xs hover:border-amber-500/50 cursor-pointer"
+                        >
+                          <CalendarDays className="h-3.5 w-3.5 mr-2 text-amber-500" />
+                          {selectedSalesDate ? format(new Date(selectedSalesDate + 'T00:00:00'), 'EEE, dd MMM yyyy') : 'Select Date'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2 border border-border/80 shadow-2xl rounded-2xl bg-card z-50" align="end">
+                        <ThemeCalendar
+                          mode="single"
+                          selected={selectedSalesDate ? new Date(selectedSalesDate + 'T00:00:00') : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              const yyyy = date.getFullYear();
+                              const mm = String(date.getMonth() + 1).padStart(2, '0');
+                              const dd = String(date.getDate()).padStart(2, '0');
+                              setSelectedSalesDate(`${yyyy}-${mm}-${dd}`);
+                            }
+                          }}
+                          initialFocus
+                          className="p-1"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+
+                {salesTimeframe === 'monthly' && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs font-semibold font-medium">Select Month & Year:</Label>
+                    <Select value={selectedSalesMonth} onValueChange={setSelectedSalesMonth}>
+                      <SelectTrigger className="h-9 text-xs w-32 bg-background border-border/60 rounded-lg font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="01">January</SelectItem>
+                        <SelectItem value="02">February</SelectItem>
+                        <SelectItem value="03">March</SelectItem>
+                        <SelectItem value="04">April</SelectItem>
+                        <SelectItem value="05">May</SelectItem>
+                        <SelectItem value="06">June</SelectItem>
+                        <SelectItem value="07">July</SelectItem>
+                        <SelectItem value="08">August</SelectItem>
+                        <SelectItem value="09">September</SelectItem>
+                        <SelectItem value="10">October</SelectItem>
+                        <SelectItem value="11">November</SelectItem>
+                        <SelectItem value="12">December</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedSalesYear} onValueChange={setSelectedSalesYear}>
+                      <SelectTrigger className="h-9 text-xs w-24 bg-background border-border/60 rounded-lg font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2026">2026</SelectItem>
+                        <SelectItem value="2025">2025</SelectItem>
+                        <SelectItem value="2024">2024</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {salesTimeframe === 'yearly' && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs font-semibold">Select Year:</Label>
+                    <Select value={selectedSalesYear} onValueChange={setSelectedSalesYear}>
+                      <SelectTrigger className="h-9 text-xs w-28 bg-background border-border/60 rounded-lg font-semibold">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2026">2026</SelectItem>
+                        <SelectItem value="2025">2025</SelectItem>
+                        <SelectItem value="2024">2024</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* KPI Overview Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Card className="border-emerald-500/30 bg-emerald-500/5 p-4 space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Sales Revenue</p>
+                <h4 className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                  ₹{totalAnalyticsRevenue.toLocaleString('en-IN')}
+                </h4>
+                <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3" /> {salesTimeframe.toUpperCase()} PERFORMANCE
+                </p>
+              </Card>
+
+              <Card className="border-blue-500/30 bg-blue-500/5 p-4 space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Orders Placed</p>
+                <h4 className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
+                  {totalAnalyticsOrders} {totalAnalyticsOrders === 1 ? 'Order' : 'Orders'}
+                </h4>
+                <p className="text-[10px] text-blue-600 font-semibold">Customer Store Purchases</p>
+              </Card>
+
+              <Card className="border-purple-500/30 bg-purple-500/5 p-4 space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Avg Order Value (AOV)</p>
+                <h4 className="text-2xl font-extrabold text-purple-600 dark:text-purple-400">
+                  ₹{avgOrderValue.toLocaleString('en-IN')}
+                </h4>
+                <p className="text-[10px] text-purple-600 font-semibold">Revenue / Order</p>
+              </Card>
+
+              <Card className="border-amber-500/30 bg-amber-500/5 p-4 space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Completed Payments</p>
+                <h4 className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">
+                  {completedPaymentsCount}/{totalAnalyticsOrders}
+                </h4>
+                <p className="text-[10px] text-amber-600 font-semibold">Online / Cash Paid</p>
+              </Card>
+            </div>
+
+            {/* Top Selling Products & Order History Split */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              {/* Top Selling Products */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <ShoppingBag className="h-4 w-4 text-amber-500" />
+                  Top Performing Store Products
+                </h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {topSellingProducts.length > 0 ? (
+                    topSellingProducts.map((prod, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-card border border-border/60 text-xs">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img src={prod.image} alt={prod.name} className="w-9 h-9 rounded-lg object-cover" />
+                          <div className="min-w-0">
+                            <p className="font-bold truncate text-foreground">{prod.name}</p>
+                            <p className="text-muted-foreground text-[11px]">{prod.quantity} {prod.quantity === 1 ? 'unit sold' : 'units sold'}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-extrabold text-emerald-600 dark:text-emerald-400">₹{prod.revenue}</p>
+                          <Badge variant="outline" className="text-[9px] border-emerald-500/30 text-emerald-600">Top Seller #{idx + 1}</Badge>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-6 text-center rounded-xl bg-muted/20 border border-border/40 text-xs text-muted-foreground">
+                      No product sales recorded for this period.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Detailed Orders Breakdown */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-blue-500" />
+                  Orders Log ({salesTimeframe.toUpperCase()})
+                </h3>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {analyticsOrdersToDisplay.length > 0 ? (
+                    analyticsOrdersToDisplay.map((ord) => (
+                      <div key={ord.id} className="p-3 rounded-xl bg-card border border-border/60 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-foreground">{ord.orderNumber}</span>
+                          <Badge className={cn(
+                            "text-[10px] capitalize border-none font-bold",
+                            ord.paymentStatus === 'completed' ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                          )}>
+                            {ord.paymentMethod.toUpperCase()} · {ord.paymentStatus}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between text-muted-foreground text-[11px]">
+                          <span>Customer: <strong className="text-foreground">{ord.customerName}</strong></span>
+                          <span>Date: <strong className="text-foreground">{ord.orderDate}</strong></span>
+                        </div>
+                        <div className="flex justify-between items-center pt-1 border-t border-border/40 font-bold text-xs">
+                          <span className="text-muted-foreground text-[11px]">{ord.items.length} item(s)</span>
+                          <span className="text-emerald-600 dark:text-emerald-400">₹{ord.totalAmount}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-6 text-center rounded-xl bg-muted/20 border border-border/40 text-xs text-muted-foreground">
+                      No orders found for the selected {salesTimeframe} timeframe.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="border-t pt-4">
+            <Button
+              onClick={() => setIsSalesAnalyticsOpen(false)}
+              className="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl cursor-pointer"
+            >
+              Close Analytics Report
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

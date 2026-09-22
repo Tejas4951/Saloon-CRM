@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Calendar, 
-  ShoppingBag, 
-  User, 
+  CalendarPlus,
+  Store, 
   Sparkles, 
   Scissors, 
   Clock, 
+  ShoppingBag,
   ShoppingCart, 
   Plus, 
   Minus, 
@@ -29,7 +30,29 @@ import {
   Pencil,
   Mail,
   Tag,
-  Package
+  Package,
+  Bookmark,
+  ClipboardList,
+  User,
+  Palette,
+  Hand,
+  Footprints,
+  UserRound,
+  Droplets,
+  Waves,
+  Eye,
+  Brush,
+  Menu,
+  X,
+  Instagram,
+  Facebook,
+  Linkedin,
+  MessageCircle,
+  Download,
+  Award,
+  LogOut,
+  Lock,
+  UserPlus
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,17 +62,20 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter, SheetDescription } from '@/components/ui/sheet';
 import { useStore, StoreProduct, StoreOrderItem } from '@/contexts/StoreContext';
 import { useAppointments } from '@/contexts/AppointmentsContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useCustomers } from '@/contexts/CustomersContext';
 import { useServices } from '@/contexts/ServicesContext';
+import { useStyles } from '@/contexts/StylesContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useSalonLogo } from '@/hooks/useSalonLogo';
 import { PwaInstallButton } from '@/components/PwaInstallButton';
+import { usePwaInstall } from '@/hooks/usePwaInstall';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as ThemeCalendar } from '@/components/ui/calendar';
 
 export interface PublicCustomerProfile {
   name: string;
@@ -61,24 +87,116 @@ export interface PublicCustomerProfile {
   photo: string;
 }
 
+// Default Lumière Style Showcase Items (Styles & Glow)
+const STYLES_SHOWCASE = [
+  {
+    id: 'style-1',
+    title: 'Textured Mid Fade',
+    stylist: 'Aarav',
+    category: 'Haircuts',
+    price: 399,
+    likes: 245,
+    serviceId: '1',
+    beforeImage: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&h=400&fit=crop',
+    afterImage: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400&h=400&fit=crop',
+    description: 'Clean mid fade with textured volume on top and crisp outline.'
+  },
+  {
+    id: 'style-2',
+    title: 'Caramel Balayage',
+    stylist: 'Meera',
+    category: 'Colour',
+    price: 1299,
+    likes: 389,
+    serviceId: '2',
+    beforeImage: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=400&h=400&fit=crop',
+    afterImage: 'https://images.unsplash.com/photo-1560869713-7d0a29430803?w=400&h=400&fit=crop',
+    description: 'Seamless hand-painted caramel highlights for natural sun-kissed dimension.'
+  },
+  {
+    id: 'style-3',
+    title: 'Sculpted Beard & Pompadour',
+    stylist: 'Rohan',
+    category: 'Beard',
+    price: 648,
+    likes: 156,
+    serviceId: '6',
+    beforeImage: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop',
+    afterImage: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop',
+    description: 'Sharp razor edge beard sculpt paired with a classic slick pompadour.'
+  },
+  {
+    id: 'style-4',
+    title: 'HydraFacial Glow',
+    stylist: 'Ananya',
+    category: 'Skin',
+    price: 899,
+    likes: 412,
+    serviceId: '3',
+    beforeImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop',
+    afterImage: 'https://images.unsplash.com/photo-1512290900673-70020016a2a2?w=400&h=400&fit=crop',
+    description: 'Deep pore cleansing and serum infusion for instant glass-skin radiance.'
+  }
+];
+
+// Booking Services Master Catalog with exact prices
+const BOOKING_SERVICES_LIST = [
+  { id: '1', name: 'Haircuts & Styles', price: 399, duration: 45, icon: Scissors },
+  { id: '2', name: 'Hair Color', price: 1299, duration: 90, icon: Palette },
+  { id: '3', name: 'Facial Treatment', price: 899, duration: 60, icon: Sparkles },
+  { id: '4', name: 'Manicure', price: 499, duration: 45, icon: Hand },
+  { id: '5', name: 'Pedicure', price: 599, duration: 45, icon: Footprints },
+  { id: '6', name: 'Beard Grooming', price: 249, duration: 30, icon: UserRound },
+  { id: '7', name: 'Hair Spa', price: 999, duration: 60, icon: Droplets },
+  { id: '8', name: 'Waxing', price: 699, duration: 45, icon: Waves },
+  { id: '9', name: 'Eyebrow Threading', price: 99, duration: 15, icon: Eye },
+  { id: '10', name: 'Makeup Application', price: 1999, duration: 60, icon: Brush }
+];
+
 export default function PublicPortal() {
   const navigate = useNavigate();
-  const { products, orders, placeOrder } = useStore();
-  const { addAppointment } = useAppointments();
+  const { products, orders, placeOrder, updateOrderStatus } = useStore();
+  const { appointments, addAppointment, updateAppointment } = useAppointments();
   const { employees } = useStaff();
   const { addCustomer } = useCustomers();
   const { logo } = useSalonLogo();
   const { services } = useServices();
+  const { styles: dynamicStyles } = useStyles();
 
-  const [activeTab, setActiveTab] = useState<'booking' | 'store' | 'orders' | 'saved' | 'profile'>('booking');
+  const { install, installed } = usePwaInstall();
 
-  // --- Customer Signup / Profile State ---
+  // Active Tab state: 'styles' | 'booking' | 'store' | 'orders' | 'appointments' | 'profile' | 'saved' | 'director'
+  const [activeTab, setActiveTab] = useState<'styles' | 'booking' | 'store' | 'orders' | 'appointments' | 'profile' | 'saved' | 'director'>('styles');
+  const [ordersSubTab, setOrdersSubTab] = useState<'current' | 'history'>('current');
+  const [appointmentsSubTab, setAppointmentsSubTab] = useState<'current' | 'history'>('current');
+  const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
+
+  // Customer Profile State
   const [customerProfile, setCustomerProfile] = useState<PublicCustomerProfile | null>(() => {
     const saved = localStorage.getItem('salon_public_customer_profile');
     return saved ? JSON.parse(saved) : null;
   });
 
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+
+  const handleConfirmLogout = () => {
+    setCustomerProfile(null);
+    localStorage.removeItem('salon_public_customer_profile');
+    setProfileFormData({
+      name: '',
+      phone: '',
+      email: '',
+      gender: 'Male',
+      preferredServices: '',
+      notes: '',
+      photo: ''
+    });
+    setIsLogoutDialogOpen(false);
+    setActiveTab('styles');
+    toast.success('Logged out successfully.');
+  };
+
   const [profileFormData, setProfileFormData] = useState<PublicCustomerProfile>({
     name: customerProfile?.name || '',
     phone: customerProfile?.phone || '',
@@ -89,23 +207,39 @@ export default function PublicPortal() {
     photo: customerProfile?.photo || ''
   });
 
-  // --- Store & Cart States ---
+  // Store & Cart States
   const [cartItems, setCartItems] = useState<StoreOrderItem[]>([]);
   const [savedProductIds, setSavedProductIds] = useState<string[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedProduct, setSelectedProduct] = useState<StoreProduct | null>(null);
+  const [productDetailQty, setProductDetailQty] = useState(1);
 
-  // Pagination state for Store tab
-  const ITEMS_PER_PAGE = 8;
-  const [currentPage, setCurrentPage] = useState(1);
+  // Style Showcase Likes & Bookmarks State
+  const [likedStyleIds, setLikedStyleIds] = useState<string[]>(['style-2']);
+  const [bookmarkedStyleIds, setBookmarkedStyleIds] = useState<string[]>(['style-2']);
 
-  // Reset pagination when search or category changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedCategory]);
+  const toggleLikeStyle = (styleId: string) => {
+    setLikedStyleIds(prev => 
+      prev.includes(styleId) ? prev.filter(id => id !== styleId) : [...prev, styleId]
+    );
+  };
 
-  // Checkout Form State
+  const toggleBookmarkStyle = (styleId: string) => {
+    setBookmarkedStyleIds(prev => {
+      const isBookmarked = prev.includes(styleId);
+      if (isBookmarked) {
+        toast.info('Removed from saved styles');
+        return prev.filter(id => id !== styleId);
+      } else {
+        toast.success('Saved to your bookmarks!');
+        return [...prev, styleId];
+      }
+    });
+  };
+
+  // Checkout State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [checkoutData, setCheckoutData] = useState({
     customerName: customerProfile?.name || '',
@@ -116,29 +250,73 @@ export default function PublicPortal() {
     notes: ''
   });
 
-  // --- Booking Wizard Flow States ---
+  // Booking Wizard States
   const [bookingStep, setBookingStep] = useState<1 | 2 | 3>(1);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [selectedServices, setSelectedServices] = useState<string[]>(['1']);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(employees[0]?.id || '1');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>('10:00 AM');
   const [bookingDate, setBookingDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [bookingCustomerName, setBookingCustomerName] = useState<string>(customerProfile?.name || '');
   const [bookingCustomerPhone, setBookingCustomerPhone] = useState<string>(customerProfile?.phone || '');
 
-  // Keep customer name & phone auto-filled when profile exists
+  // Inline Sign Up State for Booking
+  const [signUpName, setSignUpName] = useState('');
+  const [signUpPhone, setSignUpPhone] = useState('');
+  const [signUpEmail, setSignUpEmail] = useState('');
+
+  // Keep customer details synced
   useEffect(() => {
     if (customerProfile) {
-      setBookingCustomerName(customerProfile.name);
-      setBookingCustomerPhone(customerProfile.phone);
+      if (customerProfile.name) setBookingCustomerName(customerProfile.name);
+      if (customerProfile.phone) setBookingCustomerPhone(customerProfile.phone);
       setCheckoutData(prev => ({
         ...prev,
-        customerName: customerProfile.name,
-        customerPhone: customerProfile.phone
+        customerName: customerProfile.name || prev.customerName,
+        customerPhone: customerProfile.phone || prev.customerPhone
       }));
+    } else {
+      setBookingCustomerName('');
+      setBookingCustomerPhone('');
     }
   }, [customerProfile]);
 
-  // Handle Photo Upload for Signup / Profile
+  // Inline Sign Up Handler during booking confirmation step
+  const handleInlineSignUp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!signUpName.trim() || !signUpPhone.trim()) {
+      toast.error('Please enter your full name and phone number to sign up.');
+      return;
+    }
+
+    const newProfile: PublicCustomerProfile = {
+      name: signUpName.trim(),
+      phone: signUpPhone.trim(),
+      email: signUpEmail.trim(),
+      gender: 'Female',
+      preferredServices: '',
+      notes: '',
+      photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop'
+    };
+
+    setCustomerProfile(newProfile);
+    localStorage.setItem('salon_public_customer_profile', JSON.stringify(newProfile));
+
+    addCustomer({
+      name: newProfile.name,
+      phone: newProfile.phone,
+      email: newProfile.email,
+      gender: 'female',
+      preferredServices: [],
+      notes: 'Registered via Lumière Appointment Booking',
+      photo: newProfile.photo,
+      visitCount: 0,
+      totalSpent: 0
+    });
+
+    toast.success('Account created! Your details are locked for appointment booking.');
+  };
+
+  // Photo Upload Handler
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -148,18 +326,17 @@ export default function PublicPortal() {
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        const res = reader.result as string;
-        setProfileFormData(prev => ({ ...prev, photo: res }));
+        setProfileFormData(prev => ({ ...prev, photo: reader.result as string }));
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Save Customer Profile / Signup
+  // Save Profile Handler
   const handleProfileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!profileFormData.name.trim() || !profileFormData.phone.trim()) {
-      toast.error('Please enter name and phone number.');
+      toast.error('Please enter your name and phone number.');
       return;
     }
 
@@ -176,28 +353,21 @@ export default function PublicPortal() {
     setCustomerProfile(updatedProfile);
     localStorage.setItem('salon_public_customer_profile', JSON.stringify(updatedProfile));
 
-    // Automatically sync public customer signup to Admin Customers tab
     addCustomer({
       name: updatedProfile.name,
       phone: updatedProfile.phone,
       email: updatedProfile.email,
       gender: updatedProfile.gender === 'Female' ? 'female' : 'male',
       preferredServices: updatedProfile.preferredServices ? updatedProfile.preferredServices.split(',').map(s => s.trim()) : [],
-      notes: updatedProfile.notes ? `Registered via Public Portal | Notes: ${updatedProfile.notes}` : 'Registered via Public Portal',
+      notes: updatedProfile.notes ? `Registered via Lumière Portal | Notes: ${updatedProfile.notes}` : 'Registered via Lumière Portal',
       photo: updatedProfile.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop',
       visitCount: 0,
       totalSpent: 0
     });
 
-    toast.success('Account created & profile saved! Admin can now view your details under Customers.');
+    toast.success('Profile saved successfully! Details synced with Salon Admin.');
     setIsProfileModalOpen(false);
   };
-
-  const bookingSteps = [
-    { number: 1, title: "Select Services" },
-    { number: 2, title: "Staff & Time" },
-    { number: 3, title: "Confirm" }
-  ];
 
   const handleServiceToggle = (serviceId: string) => {
     setSelectedServices(prev => 
@@ -207,8 +377,12 @@ export default function PublicPortal() {
     );
   };
 
-  const selectedServicesData = services.filter(s => selectedServices.includes(s.id));
-  const totalDuration = selectedServicesData.reduce((acc, s) => acc + s.duration, 0);
+  const allAvailableServices = [
+    ...BOOKING_SERVICES_LIST,
+    ...services.filter(s => !BOOKING_SERVICES_LIST.some(b => b.id === s.id))
+  ];
+  const selectedServicesData = allAvailableServices.filter(s => selectedServices.includes(s.id));
+  const totalDuration = selectedServicesData.reduce((acc, s) => acc + (s.duration || 30), 0);
   const totalPrice = selectedServicesData.reduce((acc, s) => acc + s.price, 0);
   const selectedEmployeeData = employees.find(e => e.id === selectedEmployeeId);
 
@@ -224,7 +398,7 @@ export default function PublicPortal() {
     { display: "08:00 PM", start: "08:00 PM" }
   ];
 
-  // Toggle Saved Wishlist
+  // Wishlist Toggle
   const toggleSaveProduct = (productId: string) => {
     setSavedProductIds(prev => {
       if (prev.includes(productId)) {
@@ -237,13 +411,12 @@ export default function PublicPortal() {
     });
   };
 
-  // Cart operations
+  // Cart Management
   const addToCart = (product: StoreProduct) => {
     if (product.stock <= 0) {
-      toast.error('Product is currently out of stock.');
+      toast.error('Product is out of stock.');
       return;
     }
-
     setCartItems(prev => {
       const existing = prev.find(item => item.productId === product.id);
       if (existing) {
@@ -285,20 +458,18 @@ export default function PublicPortal() {
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Handle Checkout Order Submission
+  // Store Checkout
   const handleCheckoutSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!checkoutData.customerName.trim() || !checkoutData.customerPhone.trim()) {
-      toast.error('Please fill in your name and phone number.');
+      toast.error('Please enter name and phone number.');
       return;
     }
-
     if (cartItems.length === 0) {
       toast.error('Your cart is empty.');
       return;
     }
 
-    // Place order in shared StoreContext (visible in Admin panel's Store -> Orders tab)
     const createdOrder = placeOrder({
       customerName: checkoutData.customerName.trim(),
       customerPhone: checkoutData.customerPhone.trim(),
@@ -312,7 +483,6 @@ export default function PublicPortal() {
       notes: checkoutData.notes.trim()
     });
 
-    // Automatically record or update customer in Admin panel's Customers tab
     addCustomer({
       name: checkoutData.customerName.trim(),
       phone: checkoutData.customerPhone.trim(),
@@ -325,43 +495,41 @@ export default function PublicPortal() {
       photo: customerProfile?.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop'
     });
 
-    toast.success(`Order #${createdOrder.orderNumber} placed successfully! We have notified the salon admin.`);
+    toast.success(`Order #${createdOrder.orderNumber} placed successfully!`);
     setCartItems([]);
     setIsCheckoutOpen(false);
     setIsCartOpen(false);
     setActiveTab('orders');
   };
 
-  // Handle Appointment Booking Submission (Step 3 Confirm)
+  // Appointment Submission
   const handleBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!bookingCustomerName.trim() || !bookingCustomerPhone.trim()) {
-      toast.error('Please enter your full name and contact phone number.');
+      toast.error('Please enter your full name and phone number.');
       return;
     }
 
     if (!selectedEmployeeId || !selectedTimeSlot || selectedServices.length === 0) {
-      toast.error('Please complete all booking steps.');
+      toast.error('Please complete service, staff, and date/time selections.');
       return;
     }
 
     const selectedStaffObj = employees.find(e => e.id === selectedEmployeeId);
 
-    // Sync appointment to shared AppointmentsContext
-    addAppointment({
-      id: `apt-${Date.now()}`,
-      customerId: 'cust-public-online',
-      employeeId: selectedEmployeeId,
-      serviceIds: selectedServices,
-      date: bookingDate,
-      time: selectedTimeSlot,
-      status: 'scheduled',
-      total: totalPrice,
-      notes: `Public Booking: ${bookingCustomerName} (${bookingCustomerPhone})`
-    });
+    const updatedProfile: PublicCustomerProfile = {
+      name: bookingCustomerName.trim(),
+      phone: bookingCustomerPhone.trim(),
+      email: customerProfile?.email || '',
+      gender: customerProfile?.gender || 'Female',
+      preferredServices: customerProfile?.preferredServices || '',
+      notes: customerProfile?.notes || '',
+      photo: customerProfile?.photo || ''
+    };
+    setCustomerProfile(updatedProfile);
+    localStorage.setItem('salon_public_customer_profile', JSON.stringify(updatedProfile));
 
-    // Automatically sync customer to Admin Customers tab
-    addCustomer({
+    const savedCustomer = addCustomer({
       name: bookingCustomerName.trim(),
       phone: bookingCustomerPhone.trim(),
       email: customerProfile?.email || '',
@@ -373,18 +541,30 @@ export default function PublicPortal() {
       photo: customerProfile?.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop'
     });
 
+    addAppointment({
+      id: `apt-${Date.now()}`,
+      customerId: savedCustomer?.id || 'cust-public-online',
+      employeeId: selectedEmployeeId || '1',
+      serviceIds: selectedServices,
+      date: bookingDate,
+      time: selectedTimeSlot || '10:00 AM',
+      status: 'scheduled',
+      total: totalPrice,
+      notes: `Public Booking: ${bookingCustomerName.trim()} (${bookingCustomerPhone.trim()})`
+    });
+
     toast.success(`Booking Confirmed! Stylist: ${selectedStaffObj?.name || 'Staff'}, Date: ${bookingDate} at ${selectedTimeSlot}`);
     
-    // Reset booking wizard state
     setBookingStep(1);
-    setSelectedServices(services[0] ? [services[0].id] : []);
+    setSelectedServices(services[0] ? [services[0].id] : ['1']);
     setSelectedTimeSlot('10:00 AM');
-    setActiveTab('orders');
+    setAppointmentsSubTab('current');
+    setActiveTab('appointments');
   };
 
-  // Filter public products
+  // Products filtering
   const activeProducts = products.filter(p => p.status === 'active');
-  const defaultCategories = ['Hair Care', 'Skin Care', 'Nails', 'Color & Chemical', 'Accessories'];
+  const defaultCategories = ['Hair Care', 'Skin Care', 'Nails', 'Styling'];
   const categories = ['All', ...Array.from(new Set([
     ...defaultCategories,
     ...products.map(p => p.category).filter(Boolean)
@@ -396,538 +576,663 @@ export default function PublicPortal() {
     return matchesSearch && matchesCat;
   });
 
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE) || 1;
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
   const savedProducts = activeProducts.filter(p => savedProductIds.includes(p.id));
 
   return (
-    <div className="yepsta-theme min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans pb-20 sm:pb-0 relative bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-950/25 via-stone-950 to-stone-950">
-      {/* Top Banner & Header */}
-      <header className="bg-stone-900/90 backdrop-blur-md border-b border-violet-500/30 sticky top-0 z-50 px-3 sm:px-4 py-2.5 sm:py-3 shadow-lg shadow-purple-950/30">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-stone-200 via-amber-100 to-stone-100 text-neutral-950 font-extrabold flex items-center justify-center overflow-hidden shadow-md shadow-violet-500/30 shrink-0">
+    <div className="min-h-screen bg-background text-foreground pb-28">
+      {/* Sticky Header Bar - Lumière Salon */}
+      <header className="sticky top-0 z-30 bg-background/85 px-4 py-3 backdrop-blur-md border-b border-border/50">
+        <div className="mx-auto max-w-lg flex items-center justify-between gap-3">
+          <button onClick={() => setActiveTab('styles')} className="flex min-w-0 items-center gap-3 text-left">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl neu">
               {logo ? (
-                <img src={logo} alt="Salon logo" className="h-full w-full object-contain bg-white" />
+                <img src={logo} alt="Salon logo" className="h-full w-full object-contain bg-white rounded-2xl" />
               ) : (
-                <Crown className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Scissors className="h-5 w-5 text-primary" />
               )}
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-extrabold tracking-wide text-white flex items-center gap-1.5 truncate">
-                SALONIQ <span className="hidden sm:inline-block text-violet-300 font-semibold text-xs px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/30">Official Store & Booking</span>
-              </h1>
-              <p className="text-[10px] sm:text-[11px] text-violet-300/70 truncate">Pune • Koregaon Park Branch</p>
-            </div>
-          </div>
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-base font-bold tracking-tight">Lumière Salon</span>
+              <span className="block truncate text-[11px] text-muted-foreground font-medium">Hair · Skin · Care</span>
+            </span>
+          </button>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* Quick Profile / Signup Avatar Button */}
-            <Button
-              onClick={() => {
-                if (customerProfile) {
-                  setProfileFormData(customerProfile);
-                } else {
-                  setProfileFormData({
-                    name: '',
-                    phone: '',
-                    email: '',
-                    gender: 'Male',
-                    preferredServices: '',
-                    notes: '',
-                    photo: ''
-                  });
-                }
-                setIsProfileModalOpen(true);
-              }}
-              variant="outline"
-              size="sm"
-              className="text-xs border-violet-500/40 text-violet-300 hover:bg-violet-950/40 hidden sm:flex items-center gap-1.5 h-8 sm:h-9"
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              aria-label="Saved"
+              onClick={() => setActiveTab('saved')}
+              className={cn(
+                "grid h-10 w-10 place-items-center rounded-2xl neu neu-press cursor-pointer",
+                activeTab === 'saved' && "neu-inset text-primary"
+              )}
             >
-              {customerProfile?.photo ? (
-                <img src={customerProfile.photo} alt={customerProfile.name} className="w-5 h-5 rounded-full object-cover" />
-              ) : (
-                <User className="h-4 w-4 text-violet-400" />
-              )}
-              <span>{customerProfile ? customerProfile.name : 'Sign Up'}</span>
-            </Button>
+              <Bookmark className="h-[18px] w-[18px]" />
+            </button>
 
-            {/* Shopping Cart Button */}
-            <Button
+            <button
+              aria-label="Cart"
               onClick={() => setIsCartOpen(true)}
-              className="relative bg-gradient-to-r from-stone-100 via-amber-50 to-stone-200 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold text-xs h-8 sm:h-9 px-3 sm:px-3.5 shadow-md shadow-violet-600/30"
+              className="relative grid h-10 w-10 place-items-center rounded-2xl neu neu-press cursor-pointer"
             >
-              <ShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-1.5" />
-              <span>Cart</span>
+              <ShoppingBag className="h-[18px] w-[18px]" />
               {cartCount > 0 && (
-                <Badge className="absolute -top-1.5 -right-1.5 bg-rose-600 text-white font-extrabold text-[10px] h-4.5 min-w-4.5 flex items-center justify-center rounded-full p-0 shadow-sm">
+                <span className="absolute -right-1 -top-1 grid h-4.5 w-4.5 place-items-center rounded-full grad-styles text-[10px] font-bold text-white shadow-xs">
                   {cartCount}
-                </Badge>
+                </span>
               )}
-            </Button>
+            </button>
+
+            {/* Top Right Hamburger Sidebar Drawer */}
+            <Sheet open={isHamburgerOpen} onOpenChange={setIsHamburgerOpen}>
+              <SheetTrigger asChild>
+                <button
+                  aria-label="Open Menu"
+                  className="grid h-10 w-10 place-items-center rounded-2xl neu neu-press cursor-pointer text-foreground hover:text-primary transition-colors"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[340px] p-0 bg-background border-l border-border/60 flex flex-col justify-between z-50 shadow-2xl">
+                <div className="p-6 space-y-6">
+                  <SheetHeader className="text-left border-b border-border/50 pb-4 pr-6">
+                    <SheetTitle className="text-base font-extrabold flex items-center gap-2.5 text-foreground">
+                      <span className="grid h-9 w-9 place-items-center rounded-2xl grad-styles text-white shadow-xs">
+                        <Scissors className="h-4.5 w-4.5" />
+                      </span>
+                      <div>
+                        <span className="block leading-tight">Lumière Salon</span>
+                        <span className="block text-[11px] font-normal text-muted-foreground mt-0.5">Hair · Skin · Care</span>
+                      </div>
+                    </SheetTitle>
+                  </SheetHeader>
+
+                  <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-2">Navigation</p>
+
+                    <button
+                      onClick={() => { setActiveTab('orders'); setIsHamburgerOpen(false); }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer",
+                        activeTab === 'orders' 
+                          ? "grad-styles text-white shadow-xs" 
+                          : "bg-muted/40 hover:bg-muted text-foreground border border-border/40"
+                      )}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span className={cn(
+                          "grid h-8 w-8 place-items-center rounded-xl",
+                          activeTab === 'orders' ? "bg-white/20 text-white" : "bg-amber-500/10 text-amber-600"
+                        )}>
+                          <Package className="h-4 w-4" />
+                        </span>
+                        My Orders
+                      </span>
+                      <ChevronRight className={cn("h-4 w-4", activeTab === 'orders' ? "text-white/80" : "text-muted-foreground")} />
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('appointments'); setIsHamburgerOpen(false); }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer",
+                        activeTab === 'appointments' 
+                          ? "grad-styles text-white shadow-xs" 
+                          : "bg-muted/40 hover:bg-muted text-foreground border border-border/40"
+                      )}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span className={cn(
+                          "grid h-8 w-8 place-items-center rounded-xl",
+                          activeTab === 'appointments' ? "bg-white/20 text-white" : "bg-sky-500/10 text-sky-600"
+                        )}>
+                          <Calendar className="h-4 w-4" />
+                        </span>
+                        My Appointments
+                      </span>
+                      <ChevronRight className={cn("h-4 w-4", activeTab === 'appointments' ? "text-white/80" : "text-muted-foreground")} />
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('profile'); setIsHamburgerOpen(false); }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer",
+                        activeTab === 'profile' 
+                          ? "grad-styles text-white shadow-xs" 
+                          : "bg-muted/40 hover:bg-muted text-foreground border border-border/40"
+                      )}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span className={cn(
+                          "grid h-8 w-8 place-items-center rounded-xl",
+                          activeTab === 'profile' ? "bg-white/20 text-white" : "bg-indigo-500/10 text-indigo-600"
+                        )}>
+                          <User className="h-4 w-4" />
+                        </span>
+                        Manage Profile
+                      </span>
+                      <ChevronRight className={cn("h-4 w-4", activeTab === 'profile' ? "text-white/80" : "text-muted-foreground")} />
+                    </button>
+
+                    <button
+                      onClick={() => { setActiveTab('director'); setIsHamburgerOpen(false); }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer",
+                        activeTab === 'director' 
+                          ? "grad-styles text-white shadow-xs" 
+                          : "bg-muted/40 hover:bg-muted text-foreground border border-border/40"
+                      )}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span className={cn(
+                          "grid h-8 w-8 place-items-center rounded-xl",
+                          activeTab === 'director' ? "bg-white/20 text-white" : "bg-amber-500/15 text-amber-600"
+                        )}>
+                          <Crown className="h-4 w-4" />
+                        </span>
+                        Director
+                      </span>
+                      <ChevronRight className={cn("h-4 w-4", activeTab === 'director' ? "text-white/80" : "text-muted-foreground")} />
+                    </button>
+                  </div>
+                </div>
+
+                {!installed && (
+                  <div className="p-6 border-t border-border/50 bg-muted/20 space-y-2">
+                    <Button
+                      onClick={async () => {
+                        setIsHamburgerOpen(false);
+                        const result = await install();
+                        if (result === 'accepted') toast.success('SALONIQ App is installing on your device.');
+                        if (result === 'dismissed') toast.info('App installation was cancelled.');
+                        if (result === 'ios') toast.info('In Safari, tap Share and choose "Add to Home Screen".', { duration: 6000 });
+                        if (result === 'unavailable') toast.info('Open this page in Chrome or Edge to install.', { duration: 5000 });
+                      }}
+                      className="w-full h-11 rounded-2xl grad-styles text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer hover:opacity-95"
+                    >
+                      <Download className="h-4 w-4" /> Install App
+                    </Button>
+                    <p className="text-[10px] text-center text-muted-foreground">Install app for 1-tap bookings & offline access.</p>
+                  </div>
+                )}
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
-        {/* Navigation Tabs (Desktop & Tablet) */}
-        <div className="hidden sm:flex bg-stone-900/90 p-1.5 rounded-xl border border-stone-800 items-center justify-center max-w-3xl mx-auto shadow-lg backdrop-blur-md">
-          <button
-            onClick={() => setActiveTab('booking')}
-            className={cn(
-              "flex-1 py-2.5 px-3 rounded-lg font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer",
-              activeTab === 'booking' ? "bg-gradient-to-r from-stone-100 to-amber-50 text-neutral-950 shadow-md shadow-violet-600/30" : "text-stone-400 hover:text-stone-200"
-            )}
-          >
-            <Calendar className="h-4 w-4" />
-            <span>Book Appointment</span>
-          </button>
+      {/* Main Container */}
+      <main className="mx-auto max-w-lg px-4 pt-3">
+        {/* TAB 1: STYLES SHOWCASE (Home) */}
+        {activeTab === 'styles' && (
+          <div className="space-y-4">
+            {(dynamicStyles && dynamicStyles.length > 0 ? dynamicStyles : STYLES_SHOWCASE).map((style) => {
+              const isLiked = likedStyleIds.includes(style.id);
+              const isBookmarked = bookmarkedStyleIds.includes(style.id);
+              const currentLikes = style.likes + (isLiked ? 1 : 0);
+              const isSingle = style.imageMode === 'single' || !style.beforeImage || style.beforeImage === style.afterImage;
 
-          <button
-            onClick={() => setActiveTab('store')}
-            className={cn(
-              "flex-1 py-2.5 px-3 rounded-lg font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer",
-              activeTab === 'store' ? "bg-gradient-to-r from-stone-100 to-amber-50 text-neutral-950 shadow-md shadow-violet-600/30" : "text-stone-400 hover:text-stone-200"
-            )}
-          >
-            <ShoppingBag className="h-4 w-4" />
-            <span>Store</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={cn(
-              "flex-1 py-2.5 px-3 rounded-lg font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer",
-              activeTab === 'orders' ? "bg-gradient-to-r from-stone-100 to-amber-50 text-neutral-950 shadow-md shadow-violet-600/30" : "text-stone-400 hover:text-stone-200"
-            )}
-          >
-            <Package className="h-4 w-4" />
-            <span>Orders</span>
-            {orders.length > 0 && (
-              <Badge className="ml-1 bg-violet-500/20 text-violet-300 text-[10px] px-1.5 py-0 h-4 min-w-4 rounded-full border border-violet-500/30">
-                {orders.length}
-              </Badge>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={cn(
-              "flex-1 py-2.5 px-3 rounded-lg font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer",
-              activeTab === 'saved' ? "bg-gradient-to-r from-stone-100 to-amber-50 text-neutral-950 shadow-md shadow-violet-600/30" : "text-stone-400 hover:text-stone-200"
-            )}
-          >
-            <Heart className="h-4 w-4" />
-            <span>Saved</span>
-            {savedProductIds.length > 0 && (
-              <Badge className="ml-1 bg-rose-600 text-white text-[10px] px-1.5 py-0 h-4 min-w-4 rounded-full">
-                {savedProductIds.length}
-              </Badge>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={cn(
-              "flex-1 py-2.5 px-3 rounded-lg font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer",
-              activeTab === 'profile' ? "bg-gradient-to-r from-stone-100 to-amber-50 text-neutral-950 shadow-md shadow-violet-600/30" : "text-stone-400 hover:text-stone-200"
-            )}
-          >
-            <User className="h-4 w-4" />
-            <span>Profile</span>
-          </button>
-        </div>
-
-        {/* Tab 1: Book Appointment (Exact Admin Dashboard 3-Step Flow) */}
-        {activeTab === 'booking' && (
-          <div className="max-w-4xl mx-auto space-y-6">
-            {/* Header Title */}
-            <div className="bg-stone-900/80 p-4 sm:p-5 rounded-2xl border border-violet-500/20 shadow-lg backdrop-blur-md">
-              <h2 className="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2.5">
-                <Scissors className="h-6 w-6 text-violet-400" /> Book Appointment
-              </h2>
-              <p className="text-xs sm:text-sm text-stone-400 mt-1">
-                Choose your preferred services, stylist, and time slot to confirm your booking.
-              </p>
-            </div>
-
-            {/* Steps Indicator Bar */}
-            <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-4">
-              {bookingSteps.map((stepItem) => (
-                <div key={stepItem.number} className="flex items-center">
-                  <div className={cn(
-                    "w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-extrabold transition-all",
-                    bookingStep >= stepItem.number 
-                      ? "bg-gradient-to-r from-stone-100 to-amber-50 text-neutral-950 shadow-md shadow-violet-600/30" 
-                      : "bg-stone-800 text-stone-400"
-                  )}>
-                    {stepItem.number}
-                  </div>
-                  <span className={cn(
-                    "ml-1.5 sm:ml-2 text-xs sm:text-sm font-semibold",
-                    bookingStep >= stepItem.number ? "text-white" : "text-stone-400"
-                  )}>
-                    {stepItem.title}
-                  </span>
-                  {stepItem.number < 3 && (
-                    <div className={cn(
-                      "w-6 sm:w-12 h-0.5 mx-2 sm:mx-4",
-                      bookingStep > stepItem.number ? "bg-violet-500" : "bg-stone-800"
-                    )} />
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Step 1: Select Services */}
-            {bookingStep === 1 && (
-              <Card className="bg-stone-900/90 border-stone-800 text-white backdrop-blur-md shadow-xl">
-                <CardHeader className="pb-3 border-b border-stone-800">
-                  <CardTitle className="text-lg font-extrabold flex items-center gap-2">
-                    Select Services
-                  </CardTitle>
-                  <CardDescription className="text-stone-400 text-xs">
-                    Choose the services you'd like to book for your appointment
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {services.map((service) => {
-                      const isSelected = selectedServices.includes(service.id);
-                      return (
-                        <div
-                          key={service.id}
-                          onClick={() => handleServiceToggle(service.id)}
-                          className={cn(
-                            "p-3.5 rounded-xl border cursor-pointer transition-all text-xs flex flex-col justify-between space-y-2",
-                            isSelected
-                              ? "border-violet-500 bg-violet-500/10 shadow-md shadow-violet-900/20"
-                              : "border-stone-800 bg-stone-950/60 hover:border-stone-700"
-                          )}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 pr-2">
-                              <h3 className="font-bold text-sm text-white">{service.name}</h3>
-                              <p className="text-xs text-stone-400 mt-0.5 line-clamp-2 leading-relaxed">
-                                {service.description}
-                              </p>
-                            </div>
-                            {isSelected && (
-                              <CheckCircle2 className="h-5 w-5 text-violet-400 shrink-0" />
-                            )}
-                          </div>
-
-                          <div className="flex items-center justify-between pt-2 border-t border-stone-800/60">
-                            <Badge variant="secondary" className="text-[10px] bg-stone-800 text-stone-300">
-                              <Clock className="h-3 w-3 mr-1 text-violet-400" />
-                              {service.duration} mins
-                            </Badge>
-                            <span className="font-extrabold text-sm text-violet-400">
-                              ₹{service.price.toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {selectedServices.length > 0 && (
-                    <div className="p-3.5 bg-violet-950/40 border border-violet-500/30 rounded-xl flex items-center justify-between">
-                      <div>
-                        <div className="text-xs font-bold text-white">
-                          {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} selected
-                        </div>
-                        <div className="text-[11px] text-stone-400">
-                          {totalDuration} minutes total
+              return (
+                <div 
+                  key={style.id} 
+                  className="rounded-[32px] p-4 bg-card/90 dark:bg-card border border-border/40 shadow-md space-y-3.5 hover:shadow-lg transition-all"
+                >
+                  {/* Single Image or Combined Before & After Image Box Container */}
+                  {isSingle ? (
+                    <div className="relative rounded-[22px] overflow-hidden bg-black/5 aspect-[4/3] sm:aspect-[16/11]">
+                      <img 
+                        src={style.afterImage || style.beforeImage} 
+                        alt={style.title} 
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative rounded-[22px] overflow-hidden bg-black/5 aspect-[4/3] sm:aspect-[16/11] grid grid-cols-2 gap-1 p-1">
+                      <div className="relative h-full w-full overflow-hidden rounded-l-[18px]">
+                        <img 
+                          src={style.beforeImage} 
+                          alt={`${style.title} before`} 
+                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+                        />
+                        <div className="absolute bottom-3 inset-x-0 flex justify-center pointer-events-none">
+                          <span className="px-3.5 py-1 rounded-md bg-black/50 backdrop-blur-md text-[11px] font-serif text-white/95 shadow-sm tracking-wide">
+                            Before
+                          </span>
                         </div>
                       </div>
-                      <div className="text-base font-extrabold text-violet-400">
-                        ₹{totalPrice.toLocaleString('en-IN')}
+
+                      <div className="relative h-full w-full overflow-hidden rounded-r-[18px]">
+                        <img 
+                          src={style.afterImage} 
+                          alt={`${style.title} after`} 
+                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+                        />
+                        <div className="absolute bottom-3 inset-x-0 flex justify-center pointer-events-none">
+                          <span className="px-3.5 py-1 rounded-md bg-black/50 backdrop-blur-md text-[11px] font-serif text-white/95 shadow-sm tracking-wide">
+                            After
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  <div className="flex justify-end pt-2">
+                  {/* Card Bottom Meta Info & Actions */}
+                  <div className="flex items-center justify-between pt-1 px-1">
+                    <div>
+                      <h3 className="text-base font-bold tracking-tight text-foreground">{style.title}</h3>
+                      <p className="text-xs font-medium text-muted-foreground mt-0.5">
+                        {style.stylist ? `by ${style.stylist} · ${style.category}` : style.category}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleLikeStyle(style.id)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
+                          isLiked 
+                            ? "bg-rose-500/10 text-rose-600 border border-rose-500/30" 
+                            : "bg-accent/60 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        )}
+                      >
+                        <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-rose-500 text-rose-500")} />
+                        <span>{currentLikes}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleBookmarkStyle(style.id)}
+                        className={cn(
+                          "grid h-9 w-9 place-items-center rounded-full text-xs transition-all cursor-pointer",
+                          isBookmarked 
+                            ? "bg-primary/10 text-primary border border-primary/30" 
+                            : "bg-accent/60 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        )}
+                      >
+                        <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-primary text-primary")} />
+                      </button>
+
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSelectedServices([style.serviceId]);
+                          setBookingStep(1);
+                          setActiveTab('booking');
+                        }}
+                        className="rounded-full text-xs font-bold grad-styles text-white px-3.5 h-9 shadow-sm hover:opacity-95 cursor-pointer ml-1"
+                      >
+                        Book
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* TAB 2: BOOKING WIZARD */}
+        {activeTab === 'booking' && (
+          <div className="space-y-5">
+            <section className="rounded-[28px] p-5 neu">
+              <h1 className="text-xl font-bold tracking-tight">Book your visit</h1>
+              <p className="mt-1 text-xs text-muted-foreground">Select one or more services to reserve your slot.</p>
+            </section>
+
+            {/* Step 1: Pick Services */}
+            {bookingStep === 1 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-3">
+                  {BOOKING_SERVICES_LIST.map((srv) => {
+                    const isSelected = selectedServices.includes(srv.id);
+                    const SrvIcon = srv.icon;
+                    return (
+                      <button
+                        key={srv.id}
+                        type="button"
+                        onClick={() => handleServiceToggle(srv.id)}
+                        className={cn(
+                          "relative flex flex-col items-center gap-2 rounded-3xl px-2 py-4 text-center neu-press cursor-pointer transition-all",
+                          isSelected ? "neu-inset border-primary/50 text-primary" : "neu"
+                        )}
+                      >
+                        <span className={cn(
+                          "grid h-11 w-11 place-items-center rounded-2xl neu-sm transition-colors",
+                          isSelected ? "grad-styles text-white" : "text-primary"
+                        )}>
+                          <SrvIcon className="h-5 w-5" />
+                        </span>
+                        <span className="text-[11px] font-medium leading-tight">{srv.name}</span>
+                        <span className="text-[10px] text-muted-foreground font-semibold">₹{srv.price}</span>
+                        {isSelected && (
+                          <span className="absolute top-2 right-2 h-4 w-4 rounded-full grad-styles grid place-items-center text-white text-[9px]">✓</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedServices.length > 0 && (
+                  <div className="sticky bottom-28 z-30 rounded-2xl neu p-3.5 flex items-center justify-between shadow-xl bg-background/95 backdrop-blur-xl border border-white/40 dark:border-white/10">
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">{selectedServices.length} {selectedServices.length === 1 ? 'service' : 'services'} selected</p>
+                      <p className="text-base font-extrabold text-foreground">Total: ₹{totalPrice}</p>
+                    </div>
                     <Button
                       onClick={() => setBookingStep(2)}
-                      disabled={selectedServices.length === 0}
-                      className="bg-gradient-to-r from-stone-100 to-amber-50 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold text-xs h-10 px-6 shadow-md shadow-violet-600/30"
+                      className="rounded-2xl grad-styles text-white font-bold text-xs px-4 py-2.5 shadow-md cursor-pointer"
                     >
-                      Next <ChevronRight className="h-4 w-4 ml-1" />
+                      Select Time & Staff →
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
+                )}
+              </div>
             )}
 
-            {/* Step 2: Select Staff & Time */}
+            {/* Step 2: Staff & Date/Time */}
             {bookingStep === 2 && (
-              <Card className="bg-stone-900/90 border-stone-800 text-white backdrop-blur-md shadow-xl">
-                <CardHeader className="pb-3 border-b border-stone-800">
-                  <CardTitle className="text-lg font-extrabold flex items-center gap-2">
-                    Select Staff & Time
-                  </CardTitle>
-                  <CardDescription className="text-stone-400 text-xs">
-                    Choose your preferred staff member and time slot for the appointment
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4 space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                    {/* Staff List */}
-                    <div className="lg:col-span-1 space-y-3">
-                      <h3 className="font-bold text-xs text-stone-200 uppercase tracking-wider">Select Staff</h3>
-                      <div className="space-y-2">
-                        {employees.map((emp) => {
-                          const isSelected = selectedEmployeeId === emp.id;
-                          return (
-                            <div
-                              key={emp.id}
-                              onClick={() => {
-                                setSelectedEmployeeId(emp.id);
-                                setSelectedTimeSlot(null);
-                              }}
-                              className={cn(
-                                "p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3",
-                                isSelected
-                                  ? "border-violet-500 bg-violet-500/10 shadow-md shadow-violet-900/20"
-                                  : "border-stone-800 bg-stone-950/60 hover:border-stone-700"
-                              )}
-                            >
-                              <img src={emp.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop'} alt={emp.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-xs text-white truncate">{emp.name}</h4>
-                                <p className="text-[11px] text-stone-400 truncate">{emp.role}</p>
-                                <div className="flex items-center gap-1 text-[10px] text-amber-400 font-semibold mt-0.5">
-                                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                                  <span>{emp.rating || '4.9'}</span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Schedule Grid */}
-                    <div className="lg:col-span-3 space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <h3 className="font-bold text-xs text-stone-200 uppercase tracking-wider">
-                          {selectedEmployeeId 
-                            ? `Available Time Slots for ${employees.find(e => e.id === selectedEmployeeId)?.name}` 
-                            : 'Select a staff member'}
-                        </h3>
-                        <div className="space-y-1">
-                          <Label className="text-[10px] text-stone-400">Date</Label>
-                          <Input
-                            type="date"
-                            value={bookingDate}
-                            onChange={e => setBookingDate(e.target.value)}
-                            className="bg-stone-950 border-stone-800 text-xs h-8 text-white focus:border-violet-500"
-                          />
+              <div className="space-y-4">
+                <div className="rounded-[24px] p-4 neu space-y-3">
+                  <h3 className="text-sm font-bold flex items-center justify-between">
+                    <span>1. Select Stylist</span>
+                    <button onClick={() => setBookingStep(1)} className="text-xs text-primary font-semibold">← Change Services</button>
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {employees.map((emp) => (
+                      <button
+                        key={emp.id}
+                        onClick={() => setSelectedEmployeeId(emp.id)}
+                        className={cn(
+                          "p-3 rounded-2xl text-left border flex items-center gap-2.5 transition-all cursor-pointer",
+                          selectedEmployeeId === emp.id ? "neu-inset border-primary bg-primary/5" : "neu"
+                        )}
+                      >
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={emp.photo} />
+                          <AvatarFallback className="bg-primary/10 text-primary font-bold">{emp.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold truncate">{emp.name}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{emp.role}</p>
                         </div>
-                      </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 p-3.5 bg-stone-950/60 rounded-xl border border-stone-800">
-                        {timeSlotsList.map((slot) => {
-                          const isSelected = selectedTimeSlot === slot.start;
-                          return (
-                            <div
-                              key={slot.start}
-                              onClick={() => setSelectedTimeSlot(slot.start)}
-                              className={cn(
-                                "p-3 rounded-lg border cursor-pointer transition-all text-center",
-                                isSelected
-                                  ? "border-violet-500 bg-violet-600 text-white font-extrabold shadow-md shadow-violet-600/30"
-                                  : "border-stone-800 bg-stone-900 hover:border-violet-500/40 text-stone-300"
-                              )}
-                            >
-                              <div className="text-xs font-bold">{slot.display}</div>
-                              <div className={cn("text-[10px] mt-0.5 font-semibold", isSelected ? "text-violet-200" : "text-emerald-400")}>
-                                Available
-                              </div>
-                            </div>
-                          );
-                        })}
+                <div className="rounded-[24px] p-4 neu space-y-3">
+                  <h3 className="text-sm font-bold">2. Select Date & Time</h3>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between text-left font-bold neu rounded-2xl h-11 text-xs border border-border/50 cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-primary" />
+                          {bookingDate ? (
+                            new Date(bookingDate + 'T00:00:00').toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })
+                          ) : (
+                            <span>Select Date</span>
+                          )}
+                        </span>
+                        <Badge variant="outline" className="text-[10px] text-primary border-primary/30 font-semibold">Change Date</Badge>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-3 neu rounded-[28px] bg-background/95 backdrop-blur-2xl border border-white/40 dark:border-white/10 shadow-2xl z-50" align="start">
+                      <ThemeCalendar
+                        mode="single"
+                        selected={bookingDate ? new Date(bookingDate + 'T00:00:00') : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            const yyyy = date.getFullYear();
+                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                            const dd = String(date.getDate()).padStart(2, '0');
+                            setBookingDate(`${yyyy}-${mm}-${dd}`);
+                          }
+                        }}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        initialFocus
+                        className="p-2"
+                        classNames={{
+                          day_selected: "grad-styles text-white hover:opacity-90 focus:opacity-90 font-bold rounded-xl shadow-xs",
+                          day_today: "neu text-primary font-bold rounded-xl",
+                          day: "h-9 w-9 p-0 font-semibold text-xs rounded-xl hover:bg-accent/50 cursor-pointer transition-colors"
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    {timeSlotsList.map((slot) => (
+                      <button
+                        key={slot.display}
+                        onClick={() => setSelectedTimeSlot(slot.display)}
+                        className={cn(
+                          "py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center",
+                          selectedTimeSlot === slot.display ? "grad-styles text-white shadow-xs border-transparent" : "neu text-muted-foreground"
+                        )}
+                      >
+                        {slot.display}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="sticky bottom-28 z-30 rounded-2xl neu p-3.5 flex items-center justify-between shadow-xl bg-background/95 backdrop-blur-xl border border-white/40 dark:border-white/10">
+                  <div>
+                    <p className="text-[11px] text-muted-foreground font-medium">Selected: {selectedEmployeeData?.name || 'Staff'}</p>
+                    <p className="text-xs font-bold text-foreground">{selectedTimeSlot || 'Select slot'}</p>
+                  </div>
+                  <Button
+                    onClick={() => setBookingStep(3)}
+                    disabled={!selectedTimeSlot || !selectedEmployeeId}
+                    className="rounded-2xl grad-styles text-white font-bold text-xs px-5 py-2.5 shadow-md cursor-pointer disabled:opacity-50"
+                  >
+                    Continue to Confirm →
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Customer Details & Confirm */}
+            {bookingStep === 3 && (
+              Boolean(customerProfile?.name && customerProfile?.phone) ? (
+                /* Logged-In State: Details are LOCKED & non-editable */
+                <form onSubmit={handleBookingSubmit} className="space-y-4">
+                  <div className="rounded-[24px] p-4 neu space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <UserCheck className="h-4 w-4 text-emerald-600" />
+                        <h3 className="text-sm font-bold">Your Details (Logged In)</h3>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] text-primary border-primary/30 flex items-center gap-1 font-semibold">
+                        <Lock className="h-3 w-3" /> Account Locked
+                      </Badge>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Appointment will be automatically booked using your logged-in account credentials.
+                    </p>
+                    <div className="space-y-2">
+                      <div>
+                        <Label className="text-xs font-semibold">Full Name</Label>
+                        <Input
+                          value={bookingCustomerName}
+                          readOnly
+                          disabled
+                          className="neu rounded-xl text-xs h-10 mt-1 bg-muted/20 cursor-not-allowed font-bold opacity-90 text-foreground"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold">Phone Number</Label>
+                        <Input
+                          value={bookingCustomerPhone}
+                          readOnly
+                          disabled
+                          className="neu rounded-xl text-xs h-10 mt-1 bg-muted/20 cursor-not-allowed font-bold opacity-90 text-foreground"
+                        />
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-3 border-t border-stone-800">
-                    <Button variant="outline" onClick={() => setBookingStep(1)} className="text-xs border-stone-700 text-stone-300">
-                      Back
+                  <div className="rounded-[24px] p-4 neu space-y-2 text-xs">
+                    <h3 className="font-bold text-sm border-b pb-2">Booking Summary</h3>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Date & Time:</span>
+                      <span className="font-bold text-foreground">{bookingDate} at {selectedTimeSlot}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Stylist:</span>
+                      <span className="font-bold text-foreground">{selectedEmployeeData?.name || 'Selected Staff'}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Services:</span>
+                      <span className="font-bold text-foreground truncate max-w-[180px]">{selectedServicesData.map(s => s.name).join(', ')}</span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t text-sm font-extrabold text-foreground">
+                      <span>Total Amount:</span>
+                      <span className="text-primary">₹{totalPrice}</span>
+                    </div>
+                  </div>
+
+                  <div className="sticky bottom-28 z-30 rounded-2xl neu p-3 flex gap-2 shadow-xl bg-background/95 backdrop-blur-xl border border-white/40 dark:border-white/10">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setBookingStep(2)}
+                      className="flex-1 rounded-2xl neu text-xs font-bold h-11 cursor-pointer"
+                    >
+                      ← Back
                     </Button>
                     <Button
-                      onClick={() => {
-                        if (!selectedEmployeeId || !selectedTimeSlot) {
-                          toast.error('Please select both a staff member and a time slot.');
-                          return;
-                        }
-                        setBookingStep(3);
-                      }}
-                      disabled={!selectedEmployeeId || !selectedTimeSlot}
-                      className="bg-gradient-to-r from-stone-100 to-amber-50 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold text-xs h-10 px-6 shadow-md shadow-violet-600/30"
+                      type="submit"
+                      className="flex-2 rounded-2xl grad-styles text-white font-bold text-sm h-11 shadow-md cursor-pointer"
                     >
-                      Next <ChevronRight className="h-4 w-4 ml-1" />
+                      Confirm Booking ✓
                     </Button>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step 3: Confirm Your Appointment (Customer Auto-Selected, No Change Modal) */}
-            {bookingStep === 3 && (
-              <Card className="bg-stone-900/90 border-stone-800 text-white backdrop-blur-md shadow-xl">
-                <CardHeader className="pb-3 border-b border-stone-800">
-                  <CardTitle className="text-lg font-extrabold flex items-center gap-2">
-                    Confirm Your Appointment
-                  </CardTitle>
-                  <CardDescription className="text-stone-400 text-xs">
-                    Please review your booking details before confirming
-                  </CardDescription>
-                </CardHeader>
-                
-                <form onSubmit={handleBookingSubmit}>
-                  <CardContent className="pt-4 space-y-6">
-                    {/* Auto-selected Customer Box */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h3 className="font-bold text-sm text-white flex items-center gap-1.5">
-                          <UserCheck className="h-4 w-4 text-emerald-400" /> Customer Information
-                        </h3>
-                        <Badge className="bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
-                          Customer Auto-Selected
-                        </Badge>
-                      </div>
-
-                      <div className="p-4 bg-stone-950/80 rounded-xl border border-stone-800 space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <Label className="text-xs font-bold text-stone-300">Your Full Name *</Label>
-                            <Input
-                              placeholder="e.g. Ananya Gupta"
-                              value={bookingCustomerName}
-                              onChange={e => setBookingCustomerName(e.target.value)}
-                              className="bg-stone-900 border-stone-800 text-xs h-9 text-white focus:border-violet-500 mt-1"
-                              required
-                            />
-                          </div>
-
-                          <div>
-                            <Label className="text-xs font-bold text-stone-300">Phone Number *</Label>
-                            <Input
-                              placeholder="+91 98765 43210"
-                              value={bookingCustomerPhone}
-                              onChange={e => setBookingCustomerPhone(e.target.value)}
-                              className="bg-stone-900 border-stone-800 text-xs h-9 text-white focus:border-violet-500 mt-1"
-                              required
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Services Summary */}
-                    <div>
-                      <h3 className="font-bold text-sm text-white mb-2.5">Services Summary</h3>
-                      <div className="space-y-2">
-                        {selectedServicesData.map((service) => (
-                          <div key={service.id} className="flex justify-between items-center p-3 bg-stone-950/60 border border-stone-800 rounded-xl text-xs">
-                            <div>
-                              <div className="font-bold text-white">{service.name}</div>
-                              <div className="text-[11px] text-stone-400">{service.duration} mins</div>
-                            </div>
-                            <div className="font-extrabold text-violet-400">₹{service.price.toLocaleString('en-IN')}</div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Staff & Time Summary */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h3 className="font-bold text-sm text-white mb-2.5">Staff Member</h3>
-                        <div className="flex items-center gap-3 p-3 bg-stone-950/60 border border-stone-800 rounded-xl">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={selectedEmployeeData?.photo} alt={selectedEmployeeData?.name} />
-                            <AvatarFallback>{selectedEmployeeData?.name?.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-bold text-xs text-white">{selectedEmployeeData?.name}</div>
-                            <div className="text-[11px] text-stone-400">{selectedEmployeeData?.role}</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className="font-bold text-sm text-white mb-2.5">Appointment Time</h3>
-                        <div className="p-3 bg-stone-950/60 border border-stone-800 rounded-xl space-y-1 text-xs">
-                          <div className="flex items-center gap-2 text-white font-bold">
-                            <Calendar className="h-3.5 w-3.5 text-violet-400" />
-                            <span>{bookingDate}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-violet-400 font-extrabold">
-                            <Clock className="h-3.5 w-3.5 text-violet-400" />
-                            <span>{selectedTimeSlot}</span>
-                          </div>
-                          <div className="text-[11px] text-stone-400">
-                            Duration: {totalDuration} minutes
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Total Amount */}
-                    <div className="border-t border-stone-800 pt-4 flex items-center justify-between">
-                      <span className="text-sm font-bold text-stone-300">Total Amount</span>
-                      <span className="text-xl font-extrabold text-violet-400">₹{totalPrice.toLocaleString('en-IN')}</span>
-                    </div>
-
-                    <div className="flex justify-between pt-2 border-t border-stone-800">
-                      <Button type="button" variant="outline" onClick={() => setBookingStep(2)} className="text-xs border-stone-700 text-stone-300">
-                        Back
-                      </Button>
-                      <Button
-                        type="submit"
-                        className="bg-gradient-to-r from-stone-100 via-amber-50 to-stone-200 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold text-xs h-11 px-8 shadow-lg shadow-violet-600/30"
-                      >
-                        Confirm Booking
-                      </Button>
-                    </div>
-                  </CardContent>
                 </form>
-              </Card>
+              ) : (
+                /* Unauthenticated State: Show Sign Up Option */
+                <div className="space-y-4">
+                  <div className="rounded-[28px] p-5 neu space-y-4">
+                    <div className="flex items-center gap-3 border-b pb-3">
+                      <div className="h-10 w-10 rounded-2xl grad-styles grid place-items-center text-white shadow-xs">
+                        <UserPlus className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-extrabold tracking-tight">Sign Up to Complete Appointment</h3>
+                        <p className="text-[11px] text-muted-foreground">Enter your details to create an account and confirm your booking slot.</p>
+                      </div>
+                    </div>
+
+                    <form onSubmit={handleInlineSignUp} className="space-y-3 text-xs">
+                      <div>
+                        <Label className="text-xs font-semibold">Full Name *</Label>
+                        <Input
+                          value={signUpName}
+                          onChange={(e) => setSignUpName(e.target.value)}
+                          placeholder="e.g. Ananya Gupta"
+                          className="neu rounded-xl text-xs h-10 mt-1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold">Phone Number *</Label>
+                        <Input
+                          value={signUpPhone}
+                          onChange={(e) => setSignUpPhone(e.target.value)}
+                          placeholder="e.g. +91 98765 43210"
+                          className="neu rounded-xl text-xs h-10 mt-1"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold">Email Address (Optional)</Label>
+                        <Input
+                          type="email"
+                          value={signUpEmail}
+                          onChange={(e) => setSignUpEmail(e.target.value)}
+                          placeholder="ananya@example.com"
+                          className="neu rounded-xl text-xs h-10 mt-1"
+                        />
+                      </div>
+
+                      <div className="sticky bottom-28 z-30 rounded-2xl neu p-3 flex gap-2 shadow-xl bg-background/95 backdrop-blur-xl border border-white/40 dark:border-white/10 mt-4">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setBookingStep(2)}
+                          className="flex-1 rounded-2xl neu text-xs font-bold h-11 cursor-pointer"
+                        >
+                          ← Back
+                        </Button>
+                        <Button
+                          type="submit"
+                          className="flex-2 rounded-2xl grad-styles text-white font-bold text-xs h-11 shadow-md cursor-pointer"
+                        >
+                          Sign Up & Proceed →
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+
+                  <div className="rounded-[24px] p-4 neu space-y-2 text-xs opacity-80">
+                    <h3 className="font-bold text-sm border-b pb-2">Booking Summary</h3>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Date & Time:</span>
+                      <span className="font-bold text-foreground">{bookingDate} at {selectedTimeSlot}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Stylist:</span>
+                      <span className="font-bold text-foreground">{selectedEmployeeData?.name || 'Selected Staff'}</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Services:</span>
+                      <span className="font-bold text-foreground truncate max-w-[180px]">{selectedServicesData.map(s => s.name).join(', ')}</span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t text-sm font-extrabold text-foreground">
+                      <span>Total Amount:</span>
+                      <span className="text-primary">₹{totalPrice}</span>
+                    </div>
+                  </div>
+                </div>
+              )
             )}
           </div>
         )}
 
-        {/* Tab 2: Order Products (Public Store) */}
+        {/* TAB 3: STORE */}
         {activeTab === 'store' && (
-          <div className="space-y-4 sm:space-y-6">
-            {/* Search & Category Header */}
-            <div className="bg-stone-900/80 p-3 sm:p-4 rounded-xl border border-violet-500/20 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md backdrop-blur-md">
-              <div className="relative w-full sm:w-80">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-violet-400" />
+          <div className="space-y-5">
+            <section className="rounded-[28px] p-5 neu">
+              <h1 className="text-xl font-bold tracking-tight">Salon Care at Home</h1>
+              <p className="mt-1 text-xs text-muted-foreground">Professional products recommended by our hair & skin stylists.</p>
+            </section>
+
+            {/* Search & Category Pills */}
+            <div className="space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search products or brands..."
+                  placeholder="Search hair serum, shampoo..."
                   value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-stone-950 border-stone-800 text-xs h-9 text-stone-200 focus:border-violet-500"
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 neu rounded-2xl text-xs h-10"
                 />
               </div>
 
-              {/* Category Pills with Horizontal Scroll on Mobile */}
-              <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1 flex-nowrap">
-                {categories.map(cat => (
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {categories.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
                     className={cn(
-                      "px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 cursor-pointer border",
-                      selectedCategory === cat 
-                        ? "bg-gradient-to-r from-stone-100 to-amber-50 text-neutral-950 font-extrabold border-violet-400 shadow-md shadow-violet-600/30" 
-                        : "bg-stone-800/80 text-stone-300 hover:bg-stone-700/80 border-stone-700/50"
+                      "px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer",
+                      selectedCategory === cat ? "grad-styles text-white shadow-xs" : "neu text-muted-foreground"
                     )}
                   >
                     {cat}
@@ -937,705 +1242,829 @@ export default function PublicPortal() {
             </div>
 
             {/* Product Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-              {paginatedProducts.map(product => {
+            <div className="grid grid-cols-2 gap-3">
+              {filteredProducts.map((product) => {
                 const isSaved = savedProductIds.includes(product.id);
                 return (
-                  <Card key={product.id} className="bg-stone-900/90 border-stone-800 hover:border-violet-500/50 hover:shadow-xl hover:shadow-purple-950/40 transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-lg group backdrop-blur-md">
-                    <div>
-                      <div className="relative h-44 sm:h-48 w-full bg-stone-950 overflow-hidden">
-                        <img 
-                          src={product.image} 
-                          alt={product.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=300&h=300&fit=crop';
-                          }}
-                        />
-                        <Badge className="absolute top-2 left-2 bg-stone-950/80 text-violet-300 text-[10px] border border-violet-500/30 backdrop-blur-xs">
-                          {product.brand}
-                        </Badge>
-                        <Badge className={cn("absolute bottom-2 left-2 text-[10px] font-bold", product.stock > 0 ? "bg-emerald-600 text-white" : "bg-rose-600 text-white")}>
-                          {product.stock > 0 ? `${product.stock} available` : 'Out of Stock'}
-                        </Badge>
+                  <div
+                    key={product.id}
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setProductDetailQty(1);
+                    }}
+                    className="rounded-[24px] p-3 neu space-y-2 flex flex-col justify-between cursor-pointer hover:scale-[1.01] transition-transform"
+                  >
+                    <div className="space-y-2">
+                      <div className="relative rounded-2xl overflow-hidden aspect-square neu-sm">
+                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleSaveProduct(product.id);
                           }}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-stone-950/80 backdrop-blur-xs border border-stone-700/50 text-stone-300 hover:text-rose-400 transition-colors cursor-pointer"
+                          className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/40 backdrop-blur-xs grid place-items-center text-white"
                         >
-                          <Heart className={cn("h-4 w-4", isSaved ? "fill-rose-500 text-rose-500" : "")} />
+                          <Bookmark className={cn("h-3.5 w-3.5", isSaved && "fill-rose-500 text-rose-500")} />
                         </button>
                       </div>
-
-                      <CardContent className="p-3.5 sm:p-4 space-y-1.5 sm:space-y-2">
-                        <span className="text-[10px] text-violet-400 uppercase font-bold tracking-wider">{product.category}</span>
-                        <h3 className="font-bold text-sm sm:text-base text-white line-clamp-1">{product.name}</h3>
-                        <p className="text-xs text-stone-400 line-clamp-2 leading-relaxed">{product.description}</p>
-                      </CardContent>
-                    </div>
-
-                    <CardFooter className="p-3.5 sm:p-4 bg-stone-950/70 border-t border-stone-800 flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] text-stone-400 block">Price</span>
-                        <span className="text-base sm:text-lg font-extrabold text-violet-400">₹{product.price.toLocaleString('en-IN')}</span>
+                        <span className="text-[10px] text-muted-foreground font-semibold">{product.brand}</span>
+                        <h4 className="text-xs font-bold line-clamp-1">{product.name}</h4>
+                        <div className="flex items-center gap-1 text-[11px] font-bold mt-1">
+                          <span className="text-amber-500">★ 4.8</span>
+                          <span className="text-foreground ml-auto">₹{product.price}</span>
+                        </div>
                       </div>
-
-                      <Button
-                        onClick={() => addToCart(product)}
-                        disabled={product.stock <= 0}
-                        className="bg-gradient-to-r from-stone-100 to-amber-50 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold text-xs h-8 sm:h-9 px-3 sm:px-3.5 shadow-md shadow-violet-600/25"
-                      >
-                        <Plus className="h-3.5 w-3.5 mr-1" /> Add to Cart
-                      </Button>
-                    </CardFooter>
-                  </Card>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(product);
+                      }}
+                      className="w-full rounded-xl grad-styles text-white text-xs font-bold h-8 shadow-xs cursor-pointer"
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Add
+                    </Button>
+                  </div>
                 );
               })}
             </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between bg-stone-900/80 p-3 sm:p-4 rounded-xl border border-violet-500/20 shadow-md backdrop-blur-md">
-                <span className="text-xs text-stone-400 font-medium">
-                  Showing Page <span className="font-extrabold text-white">{currentPage}</span> of <span className="font-extrabold text-white">{totalPages}</span> ({filteredProducts.length} total products)
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="h-8 px-2.5 text-xs border-stone-700 text-slate-700 hover:bg-violet-100 hover:text-violet-800 disabled:opacity-40"
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" /> Prev
-                  </Button>
-
-                  <div className="hidden sm:flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={cn(
-                          "w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center",
-                          currentPage === page 
-                            ? "bg-gradient-to-r from-stone-100 to-amber-50 text-neutral-950 shadow-md shadow-violet-600/30" 
-                            : "bg-stone-800/80 text-stone-400 hover:bg-stone-700 hover:text-white"
-                        )}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="h-8 px-2.5 text-xs border-stone-700 text-slate-700 hover:bg-violet-100 hover:text-violet-800 disabled:opacity-40"
-                  >
-                    Next <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Tab 3: Dedicated Orders & Purchase History Tab */}
+        {/* TAB 4: MY ORDERS */}
         {activeTab === 'orders' && (
-          <div className="space-y-6">
-            <Card className="bg-stone-900/90 border-stone-800 text-white backdrop-blur-md shadow-xl">
-              <CardHeader className="p-4 sm:p-6 pb-3 border-b border-stone-800">
-                <CardTitle className="text-base sm:text-lg font-extrabold flex items-center gap-2">
-                  <Package className="h-5 w-5 text-violet-400" /> My Orders & Purchase History
-                </CardTitle>
-                <CardDescription className="text-stone-400 text-xs">
-                  Track status of orders placed on the salon store.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6 space-y-4">
-                {orders.length === 0 ? (
-                  <div className="text-center py-12 text-stone-400 space-y-3">
-                    <Package className="h-12 w-12 mx-auto text-stone-600 opacity-40" />
-                    <p className="text-xs font-semibold">You have not placed any store orders yet.</p>
-                    <Button
-                      onClick={() => setActiveTab('store')}
-                      className="bg-gradient-to-r from-stone-100 to-amber-50 text-neutral-950 text-xs font-bold px-4 h-9 shadow-md shadow-violet-600/30"
-                    >
-                      Browse Store & Order Products
-                    </Button>
-                  </div>
-                ) : (
-                  orders.map(ord => (
-                    <div key={ord.id} className="bg-stone-950/80 border border-stone-800 rounded-xl p-3.5 sm:p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-violet-400 font-mono font-bold text-xs">{ord.orderNumber}</span>
-                          <p className="text-xs text-stone-400">Placed on {ord.orderDate}</p>
-                        </div>
-                        <Badge className={cn("text-xs font-bold px-2.5 py-0.5", 
-                          ord.orderStatus === 'completed' ? "bg-emerald-600 text-white" :
-                          ord.orderStatus === 'processing' ? "bg-blue-600 text-white" : "bg-gradient-to-r from-stone-100 to-amber-50 text-white")}>
-                          {ord.orderStatus.toUpperCase()}
-                        </Badge>
-                      </div>
-
-                      <div className="divide-y divide-stone-800/60">
-                        {ord.items.map((item, idx) => (
-                          <div key={idx} className="py-2 flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-2 min-w-0 pr-2">
-                              <img src={item.productImage} alt={item.productName} className="w-8 h-8 rounded object-cover shrink-0" />
-                              <span className="truncate">{item.productName} (x{item.quantity})</span>
-                            </div>
-                            <span className="font-bold shrink-0">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-2 border-t border-stone-800 text-xs gap-1 sm:gap-0">
-                        <span className="text-stone-400">Method: {ord.deliveryType === 'delivery' ? 'Home Delivery' : 'Salon Pickup'} ({ord.paymentMethod.toUpperCase()})</span>
-                        <span className="text-violet-400 font-extrabold text-sm">Total: ₹{ord.totalAmount.toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Tab 4: Saved Products Wishlist */}
-        {activeTab === 'saved' && (
-          <div className="space-y-4 sm:space-y-6">
-            <div className="bg-stone-900/80 p-4 rounded-xl border border-violet-500/20 flex items-center justify-between shadow-md backdrop-blur-md">
-              <div>
-                <h2 className="text-lg font-extrabold text-white flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-rose-500 fill-rose-500" /> Saved Wishlist
-                </h2>
-                <p className="text-xs text-stone-400 mt-0.5">Your bookmarked products for quick access.</p>
-              </div>
-              <Badge className="bg-violet-500/10 text-violet-300 border border-violet-500/30 text-xs font-bold px-3 py-1">
-                {savedProducts.length} Items
-              </Badge>
-            </div>
-
-            {savedProducts.length === 0 ? (
-              <Card className="bg-stone-900/80 border-stone-800 text-center py-12 text-white backdrop-blur-md">
-                <CardContent className="space-y-3">
-                  <Heart className="h-12 w-12 text-stone-600 mx-auto opacity-40" />
-                  <h3 className="font-bold text-base text-stone-200">No saved items yet</h3>
-                  <p className="text-xs text-stone-400 max-w-sm mx-auto">
-                    Browse our salon store and tap the heart icon on any product to save it here for later.
-                  </p>
-                  <Button
-                    onClick={() => setActiveTab('store')}
-                    className="bg-gradient-to-r from-stone-100 via-amber-50 to-stone-200 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold text-xs h-9 px-4 mt-2 shadow-md shadow-violet-600/30"
-                  >
-                    Explore Store Products
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-                {savedProducts.map(product => (
-                  <Card key={product.id} className="bg-stone-900/90 border-stone-800 hover:border-violet-500/50 hover:shadow-xl hover:shadow-purple-950/40 transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-lg group backdrop-blur-md">
-                    <div>
-                      <div className="relative h-44 sm:h-48 w-full bg-stone-950 overflow-hidden">
-                        <img 
-                          src={product.image} 
-                          alt={product.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=300&h=300&fit=crop';
-                          }}
-                        />
-                        <Badge className="absolute top-2 left-2 bg-stone-950/80 text-violet-300 text-[10px] border border-violet-500/30 backdrop-blur-xs">
-                          {product.brand}
-                        </Badge>
-                        <button
-                          onClick={() => toggleSaveProduct(product.id)}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-stone-950/80 backdrop-blur-xs border border-stone-700/50 text-rose-500 fill-rose-500 hover:text-rose-400 transition-colors cursor-pointer"
-                        >
-                          <Heart className="h-4 w-4 fill-rose-500 text-rose-500" />
-                        </button>
-                      </div>
-
-                      <CardContent className="p-3.5 sm:p-4 space-y-1.5 sm:space-y-2">
-                        <span className="text-[10px] text-violet-400 uppercase font-bold tracking-wider">{product.category}</span>
-                        <h3 className="font-bold text-sm sm:text-base text-white line-clamp-1">{product.name}</h3>
-                        <p className="text-xs text-stone-400 line-clamp-2 leading-relaxed">{product.description}</p>
-                      </CardContent>
-                    </div>
-
-                    <CardFooter className="p-3.5 sm:p-4 bg-stone-950/70 border-t border-stone-800 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-stone-400 block">Price</span>
-                        <span className="text-base sm:text-lg font-extrabold text-violet-400">₹{product.price.toLocaleString('en-IN')}</span>
-                      </div>
-
-                      <Button
-                        onClick={() => addToCart(product)}
-                        disabled={product.stock <= 0}
-                        className="bg-gradient-to-r from-stone-100 to-amber-50 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold text-xs h-8 sm:h-9 px-3 sm:px-3.5 shadow-md shadow-violet-600/25"
-                      >
-                        <Plus className="h-3.5 w-3.5 mr-1" /> Add to Cart
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tab 5: Customer Profile (Purely Customer Info & Signup) */}
-        {activeTab === 'profile' && (
-          <div className="space-y-6 max-w-3xl mx-auto">
-            <section className="flex flex-col gap-4 rounded-2xl border border-stone-800 bg-stone-900/90 p-4 text-white shadow-xl sm:flex-row sm:items-center sm:justify-between sm:p-5">
-              <div className="max-w-md">
-                <h3 className="text-base font-extrabold text-white">Keep SALONIQ on your phone</h3>
-                <p className="mt-1 text-xs leading-relaxed text-stone-400">
-                  Install the app for quicker bookings, orders, and profile access—no app store needed.
-                </p>
-              </div>
-              <PwaInstallButton className="w-full shrink-0 sm:w-auto" />
+          <div className="space-y-5">
+            <section className="rounded-[28px] p-5 neu">
+              <h1 className="text-xl font-bold tracking-tight">My Orders</h1>
+              <p className="mt-1 text-xs text-muted-foreground">Track product purchases & order deliveries.</p>
             </section>
 
-            {/* Customer Profile Card */}
-            {customerProfile ? (
-              <Card className="bg-stone-900/90 border-stone-800 text-white backdrop-blur-md shadow-xl">
-                <CardHeader className="p-4 sm:p-6 pb-4 border-b border-stone-800 flex flex-row items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-14 h-14 border-2 border-violet-500/50">
-                      <AvatarImage src={customerProfile.photo} alt={customerProfile.name} />
-                      <AvatarFallback className="bg-violet-600 text-white font-extrabold text-lg">{customerProfile.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-lg font-extrabold text-white flex items-center gap-2">
-                        {customerProfile.name}
-                        <Badge className="bg-violet-500/10 text-violet-300 border border-violet-500/30 text-[10px]">
-                          {customerProfile.gender}
-                        </Badge>
-                      </h3>
-                      <p className="text-xs text-stone-400 flex flex-wrap items-center gap-3 mt-0.5">
-                        <span>📞 {customerProfile.phone}</span>
-                        {customerProfile.email && <span>✉️ {customerProfile.email}</span>}
+            {/* Subtabs Toggle */}
+            <div className="grid grid-cols-2 p-1 neu rounded-2xl gap-1">
+              <button
+                onClick={() => setOrdersSubTab('current')}
+                className={cn(
+                  "py-2 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                  ordersSubTab === 'current' ? "grad-styles text-white shadow-xs" : "text-muted-foreground"
+                )}
+              >
+                Current
+              </button>
+              <button
+                onClick={() => setOrdersSubTab('history')}
+                className={cn(
+                  "py-2 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                  ordersSubTab === 'history' ? "grad-styles text-white shadow-xs" : "text-muted-foreground"
+                )}
+              >
+                History
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {(() => {
+                const filteredOrders = orders.filter(o => 
+                  ordersSubTab === 'current' 
+                    ? (o.orderStatus === 'pending' || o.orderStatus === 'processing')
+                    : (o.orderStatus === 'completed' || o.orderStatus === 'cancelled')
+                );
+
+                if (filteredOrders.length === 0) {
+                  return (
+                    <div className="text-center p-8 neu rounded-[28px] space-y-2">
+                      <Package className="h-10 w-10 mx-auto text-muted-foreground/60" />
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {ordersSubTab === 'current' ? 'No active orders right now' : 'No order history found'}
                       </p>
+                      {ordersSubTab === 'current' && (
+                        <Button size="sm" onClick={() => setActiveTab('store')} className="grad-styles text-white font-bold rounded-2xl text-xs mt-2">
+                          Explore Store Products
+                        </Button>
+                      )}
                     </div>
-                  </div>
+                  );
+                }
 
-                  <Button
-                    onClick={() => {
-                      setProfileFormData(customerProfile);
-                      setIsProfileModalOpen(true);
-                    }}
-                    size="sm"
-                    variant="outline"
-                    className="text-xs border-violet-500/40 text-violet-300 hover:bg-violet-950/40"
-                  >
-                    <Pencil className="h-3.5 w-3.5 mr-1" /> Edit Profile
-                  </Button>
-                </CardHeader>
-
-                <CardContent className="p-4 sm:p-6 space-y-3">
-                  {customerProfile.preferredServices && (
-                    <div>
-                      <span className="text-[11px] font-bold text-stone-400 block uppercase tracking-wider mb-1">Preferred Services</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {customerProfile.preferredServices.split(',').map((svc, idx) => (
-                          <Badge key={idx} variant="secondary" className="bg-stone-950 text-violet-300 border border-stone-800 text-xs py-0.5 px-2.5">
-                            {svc.trim()}
-                          </Badge>
-                        ))}
+                return filteredOrders.map((order) => (
+                  <div key={order.id} className="rounded-[24px] p-4 neu space-y-2 text-xs">
+                    <div className="flex justify-between items-center border-b pb-2">
+                      <span className="font-bold text-foreground">Order #{order.orderNumber}</span>
+                      <Badge className={cn(
+                        "capitalize font-bold border-none",
+                        order.orderStatus === 'completed' ? "bg-emerald-500/10 text-emerald-600" :
+                        order.orderStatus === 'cancelled' ? "bg-rose-500/10 text-rose-600" :
+                        "bg-amber-500/10 text-amber-600"
+                      )}>
+                        {order.orderStatus}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground">{order.items.map(i => `${i.productName} (x${i.quantity})`).join(', ')}</p>
+                    <div className="flex justify-between items-center pt-1 font-extrabold text-sm">
+                      <span>Total: ₹{order.totalAmount}</span>
+                      <span className="text-[11px] text-muted-foreground font-normal">{order.orderDate}</span>
+                    </div>
+                    {ordersSubTab === 'current' && (
+                      <div className="pt-2 border-t flex justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to cancel Order #${order.orderNumber}?`)) {
+                              updateOrderStatus(order.id, 'cancelled');
+                              toast.success(`Order #${order.orderNumber} has been cancelled.`);
+                            }
+                          }}
+                          className="rounded-xl text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900/50 dark:hover:bg-rose-950/30 h-8 cursor-pointer"
+                        >
+                          Cancel Order
+                        </Button>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        )}
 
-                  {customerProfile.notes && (
-                    <div className="bg-stone-950/80 p-3 rounded-xl border border-stone-800 text-xs">
-                      <span className="text-[11px] font-bold text-stone-400 block uppercase tracking-wider mb-0.5">Notes</span>
-                      <p className="text-stone-300 leading-relaxed">{customerProfile.notes}</p>
+        {/* TAB 5: MY APPOINTMENTS */}
+        {activeTab === 'appointments' && (
+          <div className="space-y-5">
+            <section className="rounded-[28px] p-5 neu">
+              <h1 className="text-xl font-bold tracking-tight">My Appointments</h1>
+              <p className="mt-1 text-xs text-muted-foreground">Manage your upcoming visits & appointment history.</p>
+            </section>
+
+            {/* Subtabs Toggle */}
+            <div className="grid grid-cols-2 p-1 neu rounded-2xl gap-1">
+              <button
+                onClick={() => setAppointmentsSubTab('current')}
+                className={cn(
+                  "py-2 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                  appointmentsSubTab === 'current' ? "grad-styles text-white shadow-xs" : "text-muted-foreground"
+                )}
+              >
+                Current
+              </button>
+              <button
+                onClick={() => setAppointmentsSubTab('history')}
+                className={cn(
+                  "py-2 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                  appointmentsSubTab === 'history' ? "grad-styles text-white shadow-xs" : "text-muted-foreground"
+                )}
+              >
+                History
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {(() => {
+                const filteredAppointments = appointments.filter(a => 
+                  appointmentsSubTab === 'current'
+                    ? (a.status === 'scheduled')
+                    : (a.status === 'completed' || a.status === 'cancelled')
+                );
+
+                if (filteredAppointments.length === 0) {
+                  return (
+                    <div className="text-center p-8 neu rounded-[28px] space-y-2">
+                      <Calendar className="h-10 w-10 mx-auto text-muted-foreground/60" />
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {appointmentsSubTab === 'current' ? 'No upcoming appointments scheduled' : 'No appointment history found'}
+                      </p>
+                      {appointmentsSubTab === 'current' && (
+                        <Button size="sm" onClick={() => { setBookingStep(1); setActiveTab('booking'); }} className="grad-styles text-white font-bold rounded-2xl text-xs mt-2">
+                          Book an Appointment
+                        </Button>
+                      )}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  );
+                }
+
+                return filteredAppointments.map((apt) => {
+                  const emp = employees.find(e => e.id === apt.employeeId);
+                  const serviceNames = apt.serviceIds
+                    .map(id => services.find(s => s.id === id)?.name)
+                    .filter(Boolean)
+                    .join(', ');
+
+                  return (
+                    <div key={apt.id} className="rounded-[24px] p-4 neu space-y-2 text-xs">
+                      <div className="flex justify-between items-center border-b pb-2">
+                        <span className="font-bold text-foreground flex items-center gap-1.5">
+                          <Calendar className="h-3.5 w-3.5 text-primary" />
+                          {apt.date} at {apt.time}
+                        </span>
+                        <Badge className={cn(
+                          "capitalize font-bold border-none",
+                          apt.status === 'completed' ? "bg-emerald-500/10 text-emerald-600" :
+                          apt.status === 'cancelled' ? "bg-rose-500/10 text-rose-600" :
+                          "bg-sky-500/10 text-sky-600"
+                        )}>
+                          {apt.status}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center text-muted-foreground">
+                        <span>Stylist: <strong className="text-foreground">{emp?.name || 'Staff Stylist'}</strong></span>
+                        <span>Services: <strong className="text-foreground">{serviceNames || 'Salon Service'}</strong></span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1 font-extrabold text-sm">
+                        <span>Total Amount: ₹{apt.total}</span>
+                        <span className="text-[10px] text-muted-foreground font-normal">{apt.notes}</span>
+                      </div>
+                      {appointmentsSubTab === 'current' && (
+                        <div className="pt-2 border-t flex justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to cancel your appointment on ${apt.date} at ${apt.time}?`)) {
+                                updateAppointment(apt.id, { status: 'cancelled' });
+                                toast.success(`Appointment on ${apt.date} at ${apt.time} has been cancelled.`);
+                              }
+                            }}
+                            className="rounded-xl text-xs font-bold text-rose-600 border-rose-200 hover:bg-rose-50 dark:border-rose-900/50 dark:hover:bg-rose-950/30 h-8 cursor-pointer"
+                          >
+                            Cancel Appointment
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: SAVED WISHLIST */}
+        {activeTab === 'saved' && (
+          <div className="space-y-5">
+            <section className="rounded-[28px] p-5 neu">
+              <h1 className="text-xl font-bold tracking-tight">Your Saved Wishlist</h1>
+              <p className="mt-1 text-xs text-muted-foreground">Items & styles you saved for later.</p>
+            </section>
+
+            {savedProducts.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {savedProducts.map((product) => (
+                  <div key={product.id} className="rounded-[24px] p-3 neu space-y-2">
+                    <img src={product.image} alt={product.name} className="w-full aspect-square object-cover rounded-2xl" />
+                    <h4 className="text-xs font-bold line-clamp-1">{product.name}</h4>
+                    <p className="text-xs font-extrabold">₹{product.price}</p>
+                    <Button size="sm" onClick={() => addToCart(product)} className="w-full grad-styles text-white rounded-xl text-xs font-bold h-8">
+                      Add to Cart
+                    </Button>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <Card className="bg-stone-900/90 border-stone-800 text-white text-center p-8 backdrop-blur-md shadow-xl">
-                <CardContent className="space-y-4 pt-2">
-                  <User className="h-14 w-14 text-violet-400 mx-auto opacity-60" />
-                  <h3 className="font-extrabold text-xl text-white">Create Your Customer Profile</h3>
-                  <p className="text-xs text-stone-400 max-w-sm mx-auto">
-                    Sign up with your photo and details to manage bookings, track orders, and set your service preferences.
-                  </p>
-                  <Button
-                    onClick={() => {
-                      setProfileFormData({
-                        name: '',
-                        phone: '',
-                        email: '',
-                        gender: 'Male',
-                        preferredServices: '',
-                        notes: '',
-                        photo: ''
-                      });
-                      setIsProfileModalOpen(true);
-                    }}
-                    className="bg-gradient-to-r from-stone-100 via-amber-50 to-stone-200 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold text-xs h-10 px-6 shadow-md shadow-violet-600/30 mt-2"
-                  >
-                    <Plus className="h-4 w-4 mr-1.5" /> Sign Up / Add Profile
-                  </Button>
-                </CardContent>
-              </Card>
+              <div className="text-center p-8 neu rounded-[28px] space-y-2">
+                <Bookmark className="h-10 w-10 mx-auto text-muted-foreground/60" />
+                <p className="text-xs text-muted-foreground font-medium">No saved items in your wishlist</p>
+              </div>
             )}
+          </div>
+        )}
+
+        {/* TAB 7: PROFILE */}
+        {activeTab === 'profile' && (
+          <div className="space-y-5">
+            <section className="rounded-[28px] p-5 neu flex items-center gap-4">
+              <Avatar className="h-16 w-16 border-2 border-primary/20">
+                <AvatarImage src={customerProfile?.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop'} />
+                <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+                  {customerProfile?.name ? customerProfile.name.charAt(0) : 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-base font-extrabold truncate">{customerProfile?.name || 'Guest Customer'}</h2>
+                <p className="text-xs text-muted-foreground">{customerProfile?.phone || '+91 Contact not added'}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{customerProfile?.email || 'email@example.com'}</p>
+              </div>
+              <Button size="sm" onClick={() => setIsProfileModalOpen(true)} className="rounded-2xl neu text-xs font-bold">
+                Edit
+              </Button>
+            </section>
+
+            <div className="space-y-2.5">
+              <button onClick={() => setActiveTab('saved')} className="w-full p-4 rounded-2xl neu flex items-center justify-between text-xs font-bold cursor-pointer hover:bg-muted/30 transition-all">
+                <span className="flex items-center gap-2.5"><Bookmark className="h-4 w-4 text-primary" /> Saved Wishlist</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button onClick={() => { setActiveTab('orders'); setOrdersSubTab('current'); }} className="w-full p-4 rounded-2xl neu flex items-center justify-between text-xs font-bold cursor-pointer hover:bg-muted/30 transition-all">
+                <span className="flex items-center gap-2.5"><Package className="h-4 w-4 text-primary" /> My Orders</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button onClick={() => { setActiveTab('appointments'); setAppointmentsSubTab('current'); }} className="w-full p-4 rounded-2xl neu flex items-center justify-between text-xs font-bold cursor-pointer hover:bg-muted/30 transition-all">
+                <span className="flex items-center gap-2.5"><Calendar className="h-4 w-4 text-primary" /> My Appointments</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button 
+                onClick={() => setIsLogoutDialogOpen(true)} 
+                className="w-full p-4 rounded-2xl neu flex items-center justify-between text-xs font-bold cursor-pointer hover:bg-rose-500/10 text-rose-600 transition-all mt-4 border border-rose-500/20"
+              >
+                <span className="flex items-center gap-2.5"><LogOut className="h-4 w-4 text-rose-500" /> Log Out</span>
+                <ChevronRight className="h-4 w-4 text-rose-500/60" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 8: DIRECTOR */}
+        {activeTab === 'director' && (
+          <div className="space-y-5">
+            <section className="rounded-[28px] p-5 neu space-y-1">
+              <div className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-amber-500" />
+                <h1 className="text-xl font-bold tracking-tight">Salon Director & Leadership</h1>
+              </div>
+              <p className="text-xs text-muted-foreground">Meet the visionary behind Lumière Salon's luxury grooming standard.</p>
+            </section>
+
+            <div className="rounded-[28px] p-6 neu space-y-5 text-center">
+              {/* Director Photo Portrait */}
+              <div className="relative mx-auto w-28 h-28 rounded-full overflow-hidden neu-sm border-2 border-primary/20 shadow-md">
+                <img
+                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop"
+                  alt="Salon Director"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <h2 className="text-lg font-extrabold tracking-tight">Rohit Sharma</h2>
+                <p className="text-xs font-semibold text-primary">Founder & Creative Director</p>
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full neu text-[11px] font-bold text-amber-600 dark:text-amber-400 mt-2">
+                  <Award className="h-3.5 w-3.5" /> 12+ Years Hair & Beauty Excellence
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl neu-inset text-xs text-muted-foreground leading-relaxed text-left space-y-2">
+                <p className="font-semibold text-foreground">"Luxury styling is about enhancing your personal identity with confidence."</p>
+                <p>
+                  Rohit founded Lumière Salon with a vision to merge international precision styling with organic skin therapy.
+                  Trained at top European hair academies, he leads our team in crafting bespoke cuts, balayage coloring, and restorative spa treatments.
+                </p>
+              </div>
+
+              {/* Direct Social Media & Contact Links */}
+              <div className="space-y-3 pt-2">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Connect with Director</h3>
+                <div className="grid grid-cols-3 gap-2.5">
+                  <a
+                    href="https://instagram.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center p-3 rounded-2xl neu hover:text-rose-500 transition-all cursor-pointer text-xs font-semibold gap-1.5"
+                  >
+                    <Instagram className="h-5 w-5 text-rose-500" />
+                    <span>Instagram</span>
+                  </a>
+
+                  <a
+                    href="https://wa.me/919876543210"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center p-3 rounded-2xl neu hover:text-emerald-500 transition-all cursor-pointer text-xs font-semibold gap-1.5"
+                  >
+                    <MessageCircle className="h-5 w-5 text-emerald-500" />
+                    <span>WhatsApp</span>
+                  </a>
+
+                  <a
+                    href="https://facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center p-3 rounded-2xl neu hover:text-blue-600 transition-all cursor-pointer text-xs font-semibold gap-1.5"
+                  >
+                    <Facebook className="h-5 w-5 text-blue-600" />
+                    <span>Facebook</span>
+                  </a>
+
+                  <a
+                    href="https://linkedin.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center p-3 rounded-2xl neu hover:text-sky-600 transition-all cursor-pointer text-xs font-semibold gap-1.5"
+                  >
+                    <Linkedin className="h-5 w-5 text-sky-600" />
+                    <span>LinkedIn</span>
+                  </a>
+
+                  <a
+                    href="tel:+919876543210"
+                    className="flex flex-col items-center justify-center p-3 rounded-2xl neu hover:text-primary transition-all cursor-pointer text-xs font-semibold gap-1.5"
+                  >
+                    <Phone className="h-5 w-5 text-primary" />
+                    <span>Call</span>
+                  </a>
+
+                  <a
+                    href="mailto:director@lumieresalon.com"
+                    className="flex flex-col items-center justify-center p-3 rounded-2xl neu hover:text-indigo-500 transition-all cursor-pointer text-xs font-semibold gap-1.5"
+                  >
+                    <Mail className="h-5 w-5 text-indigo-500" />
+                    <span>Email</span>
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </main>
 
-      {/* Fixed Bottom Navigation Bar for Mobile Phones */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-stone-900/95 backdrop-blur-md border-t border-stone-800 flex justify-around items-center py-2 sm:hidden shadow-2xl">
-        <button
-          onClick={() => setActiveTab('booking')}
-          className={cn(
-            "flex flex-col items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer",
-            activeTab === 'booking' ? "text-violet-400" : "text-stone-400 hover:text-stone-200"
-          )}
-        >
-          <Calendar className="h-5 w-5" />
-          <span>Book</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('store')}
-          className={cn(
-            "flex flex-col items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer",
-            activeTab === 'store' ? "text-violet-400" : "text-stone-400 hover:text-stone-200"
-          )}
-        >
-          <ShoppingBag className="h-5 w-5" />
-          <span>Store</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('orders')}
-          className={cn(
-            "relative flex flex-col items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer",
-            activeTab === 'orders' ? "text-violet-400" : "text-stone-400 hover:text-stone-200"
-          )}
-        >
-          <Package className="h-5 w-5" />
-          <span>Orders</span>
-          {orders.length > 0 && (
-            <Badge className="absolute top-0 right-1 bg-violet-600 text-white font-bold text-[9px] h-3.5 min-w-3.5 flex items-center justify-center rounded-full p-0">
-              {orders.length}
-            </Badge>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('saved')}
-          className={cn(
-            "relative flex flex-col items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer",
-            activeTab === 'saved' ? "text-violet-400" : "text-stone-400 hover:text-stone-200"
-          )}
-        >
-          <Heart className="h-5 w-5" />
-          <span>Saved</span>
-          {savedProductIds.length > 0 && (
-            <Badge className="absolute top-0 right-1 bg-rose-600 text-white font-bold text-[9px] h-3.5 min-w-3.5 flex items-center justify-center rounded-full p-0">
-              {savedProductIds.length}
-            </Badge>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={cn(
-            "flex flex-col items-center gap-1 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer",
-            activeTab === 'profile' ? "text-violet-400" : "text-stone-400 hover:text-stone-200"
-          )}
-        >
-          <User className="h-5 w-5" />
-          <span>Profile</span>
-        </button>
-      </nav>
-
-      {/* Modal: Add New Customer / Sign Up / Edit Profile */}
-      <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
-        <DialogContent className="bg-stone-900 text-white border-stone-800 max-w-md p-5 rounded-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-extrabold flex items-center justify-between text-white">
-              <span>{customerProfile ? 'Edit Customer Profile' : 'Add New Customer'}</span>
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleProfileSubmit} className="space-y-4 pt-2">
-            {/* Customer Photo */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-stone-200">Customer Photo</Label>
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full border-2 border-dashed border-violet-500/40 bg-stone-950 flex flex-col items-center justify-center overflow-hidden shrink-0">
-                  {profileFormData.photo ? (
-                    <img src={profileFormData.photo} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="text-center text-stone-400">
-                      <User className="h-6 w-6 mx-auto" />
-                      <span className="text-[10px]">Preview</span>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    id="customer-photo-upload"
-                    onChange={handlePhotoUpload}
-                    className="hidden"
-                  />
-                  <label 
-                    htmlFor="customer-photo-upload"
-                    className="inline-flex items-center px-3.5 py-2 rounded-lg border border-stone-700 bg-stone-800 hover:bg-stone-700 text-xs font-bold cursor-pointer text-white transition-colors"
-                  >
-                    <Upload className="h-3.5 w-3.5 mr-1.5 text-violet-400" /> Upload Photo
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Name */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-stone-200">Name *</Label>
-              <Input
-                placeholder="Customer name"
-                value={profileFormData.name}
-                onChange={e => setProfileFormData({ ...profileFormData, name: e.target.value })}
-                className="bg-stone-950 border-stone-800 text-xs h-10 text-white focus:border-violet-500"
-                required
-              />
-            </div>
-
-            {/* Phone & Gender */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-stone-200">Phone *</Label>
-                <Input
-                  placeholder="Phone number"
-                  value={profileFormData.phone}
-                  onChange={e => setProfileFormData({ ...profileFormData, phone: e.target.value })}
-                  className="bg-stone-950 border-stone-800 text-xs h-10 text-white focus:border-violet-500"
-                  required
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-stone-200">Gender</Label>
-                <Select value={profileFormData.gender} onValueChange={(val: any) => setProfileFormData({ ...profileFormData, gender: val })}>
-                  <SelectTrigger className="bg-stone-950 border-stone-800 text-xs h-10 text-white focus:border-violet-500"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-stone-900 border-stone-800 text-white">
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-stone-200">Email</Label>
-              <Input
-                type="email"
-                placeholder="Email address"
-                value={profileFormData.email}
-                onChange={e => setProfileFormData({ ...profileFormData, email: e.target.value })}
-                className="bg-stone-950 border-stone-800 text-xs h-10 text-white focus:border-violet-500"
-              />
-            </div>
-
-            {/* Preferred Services */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-stone-200">Preferred Services</Label>
-              <Input
-                placeholder="e.g., Haircut, Facial, Massage"
-                value={profileFormData.preferredServices}
-                onChange={e => setProfileFormData({ ...profileFormData, preferredServices: e.target.value })}
-                className="bg-stone-950 border-stone-800 text-xs h-10 text-white focus:border-violet-500"
-              />
-              <p className="text-[10px] text-stone-400">Separate multiple services with commas</p>
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-stone-200">Notes</Label>
-              <textarea
-                placeholder="Additional notes"
-                value={profileFormData.notes}
-                onChange={e => setProfileFormData({ ...profileFormData, notes: e.target.value })}
-                rows={3}
-                className="w-full bg-stone-950 border border-stone-800 rounded-lg p-2.5 text-xs text-white focus:border-violet-500 outline-none"
-              />
-            </div>
-
-            <DialogFooter className="pt-2 flex flex-row justify-end gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setIsProfileModalOpen(false)} className="text-stone-400">
-                Cancel
-              </Button>
-              <Button type="submit" size="sm" className="bg-gradient-to-r from-stone-100 to-amber-50 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold shadow-md shadow-violet-600/30">
-                Save Profile Details
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Slide-over Shopping Cart Sheet */}
+      {/* Cart Sheet */}
       <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
-        <SheetContent className="bg-stone-900 text-white border-stone-800 w-full sm:max-w-md flex flex-col justify-between p-4 sm:p-6">
-          <SheetHeader className="border-b border-stone-800 pb-3 sm:pb-4">
-            <SheetTitle className="text-base sm:text-lg font-extrabold text-white flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-violet-400" /> Shopping Cart ({cartCount})
+        <SheetContent side="right" className="w-full sm:max-w-md p-4 flex flex-col justify-between">
+          <SheetHeader className="border-b pb-3">
+            <SheetTitle className="text-base font-bold flex items-center justify-between">
+              <span>Your Shopping Cart ({cartCount})</span>
             </SheetTitle>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto py-4 space-y-4 divide-y divide-stone-800">
-            {cartItems.length === 0 ? (
-              <div className="text-center py-12 text-stone-400">
-                <ShoppingCart className="h-10 w-10 mx-auto mb-2 opacity-40 text-violet-400" />
-                <p className="text-xs font-semibold">Your cart is empty</p>
-              </div>
-            ) : (
-              cartItems.map(item => (
-                <div key={item.productId} className="pt-3 first:pt-0 flex items-center justify-between gap-3">
-                  <img src={item.productImage} alt={item.productName} className="w-12 h-12 rounded-lg object-cover bg-stone-950 border border-stone-800 shrink-0" />
+          <div className="flex-1 overflow-y-auto space-y-3 py-3">
+            {cartItems.length > 0 ? (
+              cartItems.map((item) => (
+                <div key={item.productId} className="flex items-center gap-3 p-2.5 rounded-2xl neu text-xs">
+                  <img src={item.productImage} alt={item.productName} className="w-12 h-12 rounded-xl object-cover" />
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-xs text-white truncate">{item.productName}</h4>
-                    <p className="text-xs text-violet-400 font-bold mt-0.5">₹{item.price.toLocaleString('en-IN')}</p>
+                    <p className="font-bold truncate">{item.productName}</p>
+                    <p className="text-muted-foreground font-semibold">₹{item.price}</p>
                   </div>
-
-                  <div className="flex items-center gap-1 bg-stone-950 border border-stone-800 rounded-md p-1 shrink-0">
-                    <button onClick={() => updateCartQty(item.productId, -1)} className="p-1 hover:text-violet-400 text-stone-300">
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <span className="text-xs font-bold px-1.5">{item.quantity}</span>
-                    <button onClick={() => updateCartQty(item.productId, 1)} className="p-1 hover:text-violet-400 text-stone-300">
-                      <Plus className="h-3 w-3" />
-                    </button>
+                  <div className="flex items-center gap-1.5 neu-inset rounded-xl p-1">
+                    <button onClick={() => updateCartQty(item.productId, -1)} className="p-1"><Minus className="h-3 w-3" /></button>
+                    <span className="font-bold px-1">{item.quantity}</span>
+                    <button onClick={() => updateCartQty(item.productId, 1)} className="p-1"><Plus className="h-3 w-3" /></button>
                   </div>
                 </div>
               ))
+            ) : (
+              <div className="p-8 text-center space-y-2 text-muted-foreground">
+                <ShoppingBag className="h-10 w-10 mx-auto text-muted-foreground/50" />
+                <p className="text-xs font-medium">Your cart is currently empty</p>
+              </div>
             )}
           </div>
 
-          <SheetFooter className="border-t border-stone-800 pt-4 flex-col space-y-3">
-            <div className="flex items-center justify-between text-sm w-full font-bold">
-              <span>Total Amount:</span>
-              <span className="text-violet-400 text-lg font-extrabold">₹{cartTotal.toLocaleString('en-IN')}</span>
-            </div>
-
-            <Button
-              onClick={() => setIsCheckoutOpen(true)}
-              disabled={cartItems.length === 0}
-              className="w-full bg-gradient-to-r from-stone-100 via-amber-50 to-stone-200 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold text-sm h-11 shadow-lg shadow-violet-600/30"
-            >
-              Proceed to Checkout
-            </Button>
-          </SheetFooter>
+          {cartItems.length > 0 && (
+            <SheetFooter className="border-t pt-3 space-y-2">
+              <div className="flex justify-between text-sm font-extrabold w-full">
+                <span>Subtotal:</span>
+                <span className="text-primary">₹{cartTotal}</span>
+              </div>
+              <Button
+                onClick={() => {
+                  setIsCartOpen(false);
+                  setIsCheckoutOpen(true);
+                }}
+                className="w-full rounded-2xl grad-styles text-white font-bold text-sm py-3"
+              >
+                Proceed to Checkout →
+              </Button>
+            </SheetFooter>
+          )}
         </SheetContent>
       </Sheet>
 
-      {/* Modal: Customer Checkout */}
+      {/* Checkout Dialog */}
       <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-        <DialogContent className="bg-stone-900 text-white border-stone-800 max-w-md p-4 sm:p-6 rounded-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md rounded-[28px] p-5 neu">
           <DialogHeader>
-            <DialogTitle className="text-base sm:text-lg font-extrabold flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-violet-400" /> Checkout & Order Placement
-            </DialogTitle>
-            <DialogDescription className="text-stone-400 text-xs">
-              Complete your contact details to place the order with the salon.
-            </DialogDescription>
+            <DialogTitle className="text-base font-bold">Store Order Checkout</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">Confirm order details & fulfillment method.</DialogDescription>
           </DialogHeader>
-
-          <form onSubmit={handleCheckoutSubmit} className="space-y-3.5 sm:space-y-4 pt-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-stone-200">Full Name *</Label>
+          <form onSubmit={handleCheckoutSubmit} className="space-y-3 text-xs">
+            <div>
+              <Label className="text-xs font-semibold">Your Full Name</Label>
               <Input
-                placeholder="Enter your name"
                 value={checkoutData.customerName}
-                onChange={e => setCheckoutData({ ...checkoutData, customerName: e.target.value })}
-                className="bg-stone-950 border-stone-800 text-xs h-9 text-white focus:border-violet-500"
+                onChange={(e) => setCheckoutData(prev => ({ ...prev, customerName: e.target.value }))}
+                className="neu rounded-xl text-xs h-9 mt-1"
                 required
               />
             </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-stone-200">Phone Number *</Label>
+            <div>
+              <Label className="text-xs font-semibold">Contact Phone</Label>
               <Input
-                placeholder="+91 98765 43210"
                 value={checkoutData.customerPhone}
-                onChange={e => setCheckoutData({ ...checkoutData, customerPhone: e.target.value })}
-                className="bg-stone-950 border-stone-800 text-xs h-9 text-white focus:border-violet-500"
+                onChange={(e) => setCheckoutData(prev => ({ ...prev, customerPhone: e.target.value }))}
+                className="neu rounded-xl text-xs h-9 mt-1"
                 required
               />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs font-bold text-stone-200">Fulfillment</Label>
-                <Select value={checkoutData.deliveryType} onValueChange={(val: any) => setCheckoutData({ ...checkoutData, deliveryType: val })}>
-                  <SelectTrigger className="bg-stone-950 border-stone-800 text-xs h-9 text-white focus:border-violet-500"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-stone-900 border-stone-800 text-white">
-                    <SelectItem value="pickup">Salon Pickup</SelectItem>
-                    <SelectItem value="delivery">Home Delivery</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label className="text-xs font-bold text-stone-200">Payment Option</Label>
-                <Select value={checkoutData.paymentMethod} onValueChange={(val: any) => setCheckoutData({ ...checkoutData, paymentMethod: val })}>
-                  <SelectTrigger className="bg-stone-950 border-stone-800 text-xs h-9 text-white focus:border-violet-500"><SelectValue /></SelectTrigger>
-                  <SelectContent className="bg-stone-900 border-stone-800 text-white">
-                    <SelectItem value="upi">UPI / GPay</SelectItem>
-                    <SelectItem value="card">Card Payment</SelectItem>
-                    <SelectItem value="cash">Pay on Delivery/Pickup</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label className="text-xs font-semibold">Fulfillment</Label>
+              <Select
+                value={checkoutData.deliveryType}
+                onValueChange={(val: 'pickup' | 'delivery') => setCheckoutData(prev => ({ ...prev, deliveryType: val }))}
+              >
+                <SelectTrigger className="neu rounded-xl text-xs h-9 mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pickup">Store Pickup (Koregaon Park Branch)</SelectItem>
+                  <SelectItem value="delivery">Home Delivery</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-
             {checkoutData.deliveryType === 'delivery' && (
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-stone-200">Delivery Address *</Label>
+              <div>
+                <Label className="text-xs font-semibold">Delivery Address</Label>
                 <Input
-                  placeholder="Street, Building, Flat number, Pune"
                   value={checkoutData.address}
-                  onChange={e => setCheckoutData({ ...checkoutData, address: e.target.value })}
-                  className="bg-stone-950 border-stone-800 text-xs h-9 text-white focus:border-violet-500"
+                  onChange={(e) => setCheckoutData(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder="Street, Landmark, City"
+                  className="neu rounded-xl text-xs h-9 mt-1"
                   required
                 />
               </div>
             )}
-
-            <div className="bg-stone-950 p-3 rounded-lg border border-stone-800 flex items-center justify-between text-xs font-bold">
-              <span className="text-stone-400">Total Payable:</span>
-              <span className="text-violet-400 text-base">₹{cartTotal.toLocaleString('en-IN')}</span>
-            </div>
-
-            <DialogFooter className="pt-2 flex flex-row justify-end gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setIsCheckoutOpen(false)} className="text-stone-400">
-                Cancel
-              </Button>
-              <Button type="submit" size="sm" className="bg-gradient-to-r from-stone-100 to-amber-50 hover:from-white hover:to-amber-50 text-neutral-950 font-extrabold shadow-md shadow-violet-600/30">
-                Confirm & Place Order
+            <DialogFooter className="pt-2">
+              <Button type="submit" className="w-full grad-styles text-white font-bold rounded-2xl h-10">
+                Place Order (₹{cartTotal})
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Profile Modal */}
+      <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
+        <DialogContent className="max-w-md rounded-[28px] p-5 neu">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold">Edit Customer Profile</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">Details are automatically synced with salon bookings & orders.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleProfileSubmit} className="space-y-3 text-xs">
+            <div>
+              <Label className="text-xs font-semibold">Name</Label>
+              <Input
+                value={profileFormData.name}
+                onChange={(e) => setProfileFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="neu rounded-xl text-xs h-9 mt-1"
+                required
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold">Phone</Label>
+              <Input
+                value={profileFormData.phone}
+                onChange={(e) => setProfileFormData(prev => ({ ...prev, phone: e.target.value }))}
+                className="neu rounded-xl text-xs h-9 mt-1"
+                required
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold">Email</Label>
+              <Input
+                type="email"
+                value={profileFormData.email}
+                onChange={(e) => setProfileFormData(prev => ({ ...prev, email: e.target.value }))}
+                className="neu rounded-xl text-xs h-9 mt-1"
+              />
+            </div>
+            <DialogFooter className="pt-2">
+              <Button type="submit" className="w-full grad-styles text-white font-bold rounded-2xl h-10">
+                Save Profile ✓
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <DialogContent className="max-w-xs sm:max-w-sm rounded-[28px] p-6 neu space-y-3 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 grid place-items-center text-rose-500 mb-1">
+            <LogOut className="h-6 w-6" />
+          </div>
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-base font-bold text-foreground">Log Out Confirmation</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-1">
+              Are you sure you want to log out? Your saved details and preferences will be cleared from this device.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsLogoutDialogOpen(false)}
+              className="w-full rounded-2xl neu text-xs font-bold h-10 cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmLogout}
+              className="w-full rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-10 shadow-md cursor-pointer"
+            >
+              Yes, Log Out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Product Details Modal */}
+      <Dialog open={Boolean(selectedProduct)} onOpenChange={(open) => { if (!open) setSelectedProduct(null); }}>
+        <DialogContent className="max-w-xs sm:max-w-md rounded-[28px] p-0 bg-background border border-border/60 shadow-2xl overflow-hidden z-50">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{selectedProduct?.name || 'Product Details'}</DialogTitle>
+            <DialogDescription>{selectedProduct?.description || 'Product details, formula specifications, and purchasing options.'}</DialogDescription>
+          </DialogHeader>
+          {selectedProduct && (
+            <div className="space-y-4">
+              {/* Product Image Banner */}
+              <div className="relative aspect-4/3 w-full bg-muted overflow-hidden">
+                <img
+                  src={selectedProduct.image}
+                  alt={selectedProduct.name}
+                  className="w-full h-full object-cover"
+                />
+                {/* Bookmark button positioned on top-left to avoid collision with modal close button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSaveProduct(selectedProduct.id);
+                  }}
+                  className="absolute top-3 left-3 h-9 w-9 rounded-full bg-black/60 backdrop-blur-md grid place-items-center text-white cursor-pointer shadow-md hover:bg-black/80 transition-colors"
+                >
+                  <Bookmark
+                    className={cn(
+                      "h-4 w-4",
+                      savedProductIds.includes(selectedProduct.id) && "fill-rose-500 text-rose-500"
+                    )}
+                  />
+                </button>
+                <div className="absolute bottom-3 left-3 flex gap-1.5">
+                  <Badge className="bg-black/70 backdrop-blur-md text-white border-none text-[10px] font-bold">
+                    {selectedProduct.brand}
+                  </Badge>
+                  <Badge className="grad-styles text-white border-none text-[10px] font-bold shadow-xs">
+                    {selectedProduct.category}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Product Details Content */}
+              <div className="px-5 space-y-3">
+                <div>
+                  <h2 className="text-base font-extrabold text-foreground leading-snug">{selectedProduct.name}</h2>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-xl font-extrabold text-primary">₹{selectedProduct.price}</span>
+                    <span className="text-xs font-semibold text-amber-500 flex items-center gap-1">
+                      ★ 4.8 <span className="text-muted-foreground font-normal">(42 reviews)</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Stock Status Badge */}
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-[10px] font-bold border-none",
+                      selectedProduct.stock > 0 ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"
+                    )}
+                  >
+                    {selectedProduct.stock > 0 ? `In Stock (${selectedProduct.stock} units left)` : 'Out of Stock'}
+                  </Badge>
+                </div>
+
+                {/* Description Box */}
+                <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/40 space-y-1 text-xs">
+                  <p className="font-bold text-foreground">Product Details</p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {selectedProduct.description || 'Professional salon-grade formula for daily haircare and skin nourishment.'}
+                  </p>
+                </div>
+
+                {/* Stylist Tip */}
+                <div className="p-3 rounded-2xl bg-primary/5 border border-primary/10 text-[11px] text-muted-foreground flex items-start gap-2">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <span><strong>Stylist Tip:</strong> Recommended by Lumière Senior Stylists for color protection & deep hair recovery.</span>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="p-4 border-t border-border/50 bg-muted/30 flex items-center gap-3">
+                <div className="flex items-center gap-1 bg-background border border-border/50 rounded-2xl p-1 shrink-0">
+                  <button
+                    onClick={() => setProductDetailQty(prev => Math.max(1, prev - 1))}
+                    className="h-8 w-8 grid place-items-center text-foreground font-bold hover:bg-muted rounded-xl cursor-pointer transition-colors"
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="font-bold text-xs px-2 text-foreground">{productDetailQty}</span>
+                  <button
+                    onClick={() => setProductDetailQty(prev => Math.min(selectedProduct.stock || 99, prev + 1))}
+                    className="h-8 w-8 grid place-items-center text-foreground font-bold hover:bg-muted rounded-xl cursor-pointer transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <Button
+                  disabled={selectedProduct.stock <= 0}
+                  onClick={() => {
+                    for (let i = 0; i < productDetailQty; i++) {
+                      addToCart(selectedProduct);
+                    }
+                    setSelectedProduct(null);
+                    toast.success(`Added ${productDetailQty}x ${selectedProduct.name} to cart.`);
+                  }}
+                  className="flex-1 h-11 rounded-2xl grad-styles text-white font-bold text-xs shadow-md cursor-pointer hover:opacity-95"
+                >
+                  Add to Cart (₹{selectedProduct.price * productDetailQty})
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* FIXED BOTTOM NAVIGATION BAR (LOVABLE 5-ITEM NEUMORPHIC NAV WITH 90% BLUR) */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 pointer-events-none">
+        <div className="mx-auto flex max-w-lg items-end justify-between rounded-[28px] bg-background/85 backdrop-blur-xl px-3 py-2 neu shadow-2xl border border-white/40 dark:border-white/10 pointer-events-auto">
+          {/* Book */}
+          <button
+            onClick={() => {
+              setBookingStep(1);
+              setActiveTab('booking');
+            }}
+            className={cn(
+              "flex w-16 flex-col items-center gap-1 rounded-2xl py-2 cursor-pointer transition-all",
+              activeTab === 'booking' ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <span className={cn("grid h-9 w-9 place-items-center rounded-xl transition-colors", activeTab === 'booking' ? "neu-inset text-primary" : "")}>
+              <CalendarPlus className="h-[18px] w-[18px]" />
+            </span>
+            <span className={cn("text-[10px] font-semibold", activeTab === 'booking' ? "text-primary font-bold" : "text-muted-foreground")}>Book</span>
+          </button>
+
+          {/* Store */}
+          <button
+            onClick={() => setActiveTab('store')}
+            className={cn(
+              "flex w-16 flex-col items-center gap-1 rounded-2xl py-2 cursor-pointer transition-all",
+              activeTab === 'store' ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <span className={cn("grid h-9 w-9 place-items-center rounded-xl transition-colors", activeTab === 'store' ? "neu-inset text-primary" : "")}>
+              <Store className="h-[18px] w-[18px]" />
+            </span>
+            <span className={cn("text-[10px] font-semibold", activeTab === 'store' ? "text-primary font-bold" : "text-muted-foreground")}>Store</span>
+          </button>
+
+          {/* Floating Center Button: Styles */}
+          <button
+            onClick={() => setActiveTab('styles')}
+            className="-mt-7 flex w-16 flex-col items-center gap-1 cursor-pointer"
+          >
+            <span
+              className="grid h-14 w-14 place-items-center rounded-3xl grad-styles text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
+              style={{ boxShadow: '0 10px 22px rgba(236, 72, 153, 0.4)' }}
+            >
+              <Sparkles className="h-6 w-6" />
+            </span>
+            <span className={cn("text-[10px] font-bold", activeTab === 'styles' ? "text-primary font-extrabold" : "text-muted-foreground")}>Styles</span>
+          </button>
+
+          {/* Orders */}
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={cn(
+              "flex w-16 flex-col items-center gap-1 rounded-2xl py-2 cursor-pointer transition-all",
+              activeTab === 'orders' ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <span className={cn("grid h-9 w-9 place-items-center rounded-xl transition-colors", activeTab === 'orders' ? "neu-inset text-primary" : "")}>
+              <ClipboardList className="h-[18px] w-[18px]" />
+            </span>
+            <span className={cn("text-[10px] font-semibold", activeTab === 'orders' ? "text-primary font-bold" : "text-muted-foreground")}>Orders</span>
+          </button>
+
+          {/* Profile */}
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={cn(
+              "flex w-16 flex-col items-center gap-1 rounded-2xl py-2 cursor-pointer transition-all",
+              activeTab === 'profile' ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <span className={cn("grid h-9 w-9 place-items-center rounded-xl transition-colors", activeTab === 'profile' ? "neu-inset text-primary" : "")}>
+              <User className="h-[18px] w-[18px]" />
+            </span>
+            <span className={cn("text-[10px] font-semibold", activeTab === 'profile' ? "text-primary font-bold" : "text-muted-foreground")}>Profile</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

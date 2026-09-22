@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "server": "ts-node-esm server.ts",
+    "seed:demo": "node --loader ts-node/esm scripts/seed-demo-data.ts",
     "build": "tsc && vite build",
     "start": "node dist/server.js",
     "lint": "eslint . --ext .ts,.tsx",
