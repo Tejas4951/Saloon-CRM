@@ -59,7 +59,7 @@ const LoginPage = () => {
             navigate('/staff-dashboard');
           } else {
             // Fallback for any other roles
-            navigate('/');
+            navigate('/index');
           }
         }
       } else {

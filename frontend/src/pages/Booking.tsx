@@ -128,7 +128,7 @@ export default function Booking() {
       setSelectedEmployee(null);
       setSelectedTime(null);
       setStep(1);
-      navigate('/');
+      navigate('/booking');
     } catch (error) {
       console.error('Error creating booking:', error);
       alert('Failed to create booking. Please try again.');

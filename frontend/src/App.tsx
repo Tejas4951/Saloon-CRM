@@ -58,7 +58,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   // Check if user has required role
@@ -70,7 +70,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     } else if (user.role === 'SUPER_ADMIN') {
       return <Navigate to="/admin/dashboard" replace />;
     }
-    return <Navigate to="/" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   return <>{children}</>;
@@ -125,11 +125,13 @@ const App = () => {
                             <PlansProvider>
                             <AdminThemeProvider>
                             <Routes>
-                            {/* Public Customer Portal (No Auth Required) */}
+                            {/* Public Customer Portal (Root domain & public endpoints) */}
+                            <Route path="/" element={<PublicPortal />} />
                             <Route path="/public" element={<PublicPortal />} />
                             <Route path="/shop" element={<PublicPortal />} />
 
-                            <Route path="/" element={
+                            {/* Admin Panel Login & Entry */}
+                            <Route path="/admin" element={
                               <PublicOnlyRoute>
                                 <Login />
                               </PublicOnlyRoute>
