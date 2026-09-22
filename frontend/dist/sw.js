@@ -1,5 +1,14 @@
-const CACHE_NAME = 'saloniq-shell-v2';
-const APP_SHELL = ['/', '/index.html', '/pwa-icon.svg'];
+const CACHE_NAME = 'saloniq-shell-v3';
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/manifest-public.webmanifest',
+  '/manifest-admin.webmanifest',
+  '/pwa-public-192.png',
+  '/pwa-public-512.png',
+  '/pwa-admin-192.png',
+  '/pwa-admin-512.png'
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
@@ -20,6 +29,15 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => caches.match('/index.html'))
+    );
+    return;
+  }
+
+  // Prefer fresh manifests so changing between the public and admin PWA never
+  // reuses an obsolete identity from the service-worker cache.
+  if (event.request.destination === 'manifest') {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
     );
     return;
   }

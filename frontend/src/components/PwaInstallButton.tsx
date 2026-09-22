@@ -3,19 +3,21 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePwaInstall } from '@/hooks/usePwaInstall';
+import type { PwaAppKind } from '@/lib/pwa';
 
 interface PwaInstallButtonProps {
   compact?: boolean;
   className?: string;
+  kind?: PwaAppKind;
 }
 
-export function PwaInstallButton({ compact = false, className }: PwaInstallButtonProps) {
-  const { install, installed } = usePwaInstall();
+export function PwaInstallButton({ compact = false, className, kind = 'admin' }: PwaInstallButtonProps) {
+  const { install, installed } = usePwaInstall(kind);
 
   const handleInstall = async () => {
     const result = await install();
 
-    if (result === 'accepted') toast.success('SALONIQ is being installed on this device.');
+    if (result === 'accepted') toast.success(`${kind === 'public' ? 'SALONIQ Salon' : 'SALONIQ Admin'} is being installed.`);
     if (result === 'dismissed') toast.info('App installation was cancelled.');
     if (result === 'ios') {
       toast.info('In Safari, tap Share and choose “Add to Home Screen”.', { duration: 6000 });
@@ -40,7 +42,7 @@ export function PwaInstallButton({ compact = false, className }: PwaInstallButto
       )}
     >
       {installed ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <Download className="mr-2 h-4 w-4" />}
-      {installed ? 'App Installed' : compact ? 'Install Admin App' : 'Install SALONIQ App'}
+      {installed ? 'App Installed' : kind === 'public' ? 'Install Salon App' : 'Install Admin App'}
     </Button>
   );
 }

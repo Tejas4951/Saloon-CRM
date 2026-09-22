@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import { AppointmentsProvider } from "./contexts/AppointmentsContext";
 import { TallyProvider } from "./contexts/TallyContext";
 import { CustomersProvider } from "./contexts/CustomersContext";
@@ -37,8 +38,29 @@ import StylesManagement from "./pages/StylesManagement";
 import { StylesProvider } from "./contexts/StylesContext";
 import { PlansProvider } from "./contexts/PlansContext";
 import PlansPage from "./pages/PlansPage";
+import { configurePwaIdentity, getPwaAppKind } from "./lib/pwa";
 
 const queryClient = new QueryClient();
+
+const PwaIdentitySync = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const kind = getPwaAppKind(location.pathname);
+    const initialKind = document.documentElement.dataset.pwaKind;
+
+    // Crossing from one SPA to the other needs a fresh document so Chromium
+    // creates the install prompt from the newly selected manifest.
+    if (initialKind && initialKind !== kind) {
+      window.location.replace(`${location.pathname}${location.search}${location.hash}`);
+      return;
+    }
+
+    configurePwaIdentity(kind);
+  }, [location.pathname, location.search, location.hash]);
+
+  return null;
+};
 
 // Protected route component with role-based access control
 interface ProtectedRouteProps {
@@ -112,6 +134,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <PwaIdentitySync />
           <AuthProvider>
             <ServicesProvider>
             <CustomersProvider>

@@ -163,7 +163,7 @@ export default function PublicPortal() {
   const { services } = useServices();
   const { styles: dynamicStyles } = useStyles();
 
-  const { install, installed } = usePwaInstall();
+  const { install, installed } = usePwaInstall('public');
 
   // Active Tab state: 'styles' | 'booking' | 'store' | 'orders' | 'appointments' | 'profile' | 'saved' | 'director'
   const [activeTab, setActiveTab] = useState<'styles' | 'booking' | 'store' | 'orders' | 'appointments' | 'profile' | 'saved' | 'director'>('styles');

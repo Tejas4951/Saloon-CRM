@@ -7,16 +7,27 @@
     <meta name="description" content="Complete salon management system for appointments, customers, staff, and inventory" />
     <meta name="author" content="SalonPro" />
     
-    <!-- Favicon -->
-    <link rel="icon" type="image/jpg" href="/logo2.jpg" />
-    <link rel="apple-touch-icon" href="/logo2.jpg" />
-    <meta name="theme-color" content="#F6F3EE" />
+    <!-- PWA identity is selected before React starts so the browser sees the
+         correct installable app on the first pass. -->
+    <link id="app-favicon" rel="icon" type="image/png" href="/pwa-admin-192.png" />
+    <link id="apple-touch-icon" rel="apple-touch-icon" href="/pwa-admin-180.png" />
+    <meta id="app-theme-color" name="theme-color" content="#071827" />
     <script>
-      const isCustomerApp = location.pathname === '/public' || location.pathname === '/shop';
+      const isCustomerApp =
+        location.pathname === '/public' ||
+        location.pathname.startsWith('/public/') ||
+        location.pathname === '/shop' ||
+        location.pathname.startsWith('/shop/');
+      const pwaKind = isCustomerApp ? 'public' : 'admin';
       const manifest = document.createElement('link');
+      manifest.id = 'app-manifest';
       manifest.rel = 'manifest';
       manifest.href = isCustomerApp ? '/manifest-public.webmanifest' : '/manifest-admin.webmanifest';
       document.head.appendChild(manifest);
+      document.documentElement.dataset.pwaKind = pwaKind;
+
+      document.getElementById('app-favicon').href = `/pwa-${pwaKind}-192.png`;
+      document.getElementById('apple-touch-icon').href = `/pwa-${pwaKind}-180.png`;
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

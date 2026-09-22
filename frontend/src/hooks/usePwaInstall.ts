@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { configurePwaIdentity, type PwaAppKind } from '@/lib/pwa';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,12 +12,14 @@ const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
   Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
 
-export function usePwaInstall() {
+export function usePwaInstall(kind: PwaAppKind = 'admin') {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(() => isStandalone());
   const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 
   useEffect(() => {
+    configurePwaIdentity(kind);
+
     const capturePrompt = (event: Event) => {
       event.preventDefault();
       setInstallPrompt(event as BeforeInstallPromptEvent);
@@ -34,7 +37,7 @@ export function usePwaInstall() {
       window.removeEventListener('beforeinstallprompt', capturePrompt);
       window.removeEventListener('appinstalled', handleInstalled);
     };
-  }, []);
+  }, [kind]);
 
   const install = useCallback(async (): Promise<PwaInstallResult> => {
     if (installed) return 'installed';
