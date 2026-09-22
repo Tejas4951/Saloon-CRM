@@ -579,12 +579,12 @@ export default function PublicPortal() {
   const savedProducts = activeProducts.filter(p => savedProductIds.includes(p.id));
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-28">
+    <div className="min-h-screen bg-slate-100/75 dark:bg-background text-foreground pb-28">
       {/* Sticky Header Bar - Lumière Salon */}
-      <header className="sticky top-0 z-30 bg-background/85 px-4 py-3 backdrop-blur-md border-b border-border/50">
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-background/90 px-4 py-3 backdrop-blur-md border-b border-slate-200/80 dark:border-border/60 shadow-xs">
         <div className="mx-auto max-w-lg flex items-center justify-between gap-3">
           <button onClick={() => setActiveTab('styles')} className="flex min-w-0 items-center gap-3 text-left">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl neu">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl neu shadow-sm">
               {logo ? (
                 <img src={logo} alt="Salon logo" className="h-full w-full object-contain bg-white rounded-2xl" />
               ) : (
@@ -602,7 +602,7 @@ export default function PublicPortal() {
               aria-label="Saved"
               onClick={() => setActiveTab('saved')}
               className={cn(
-                "grid h-10 w-10 place-items-center rounded-2xl neu neu-press cursor-pointer",
+                "grid h-10 w-10 place-items-center rounded-2xl neu neu-press cursor-pointer shadow-xs",
                 activeTab === 'saved' && "neu-inset text-primary"
               )}
             >
@@ -612,7 +612,7 @@ export default function PublicPortal() {
             <button
               aria-label="Cart"
               onClick={() => setIsCartOpen(true)}
-              className="relative grid h-10 w-10 place-items-center rounded-2xl neu neu-press cursor-pointer"
+              className="relative grid h-10 w-10 place-items-center rounded-2xl neu neu-press cursor-pointer shadow-xs"
             >
               <ShoppingBag className="h-[18px] w-[18px]" />
               {cartCount > 0 && (
@@ -627,7 +627,7 @@ export default function PublicPortal() {
               <SheetTrigger asChild>
                 <button
                   aria-label="Open Menu"
-                  className="grid h-10 w-10 place-items-center rounded-2xl neu neu-press cursor-pointer text-foreground hover:text-primary transition-colors"
+                  className="grid h-10 w-10 place-items-center rounded-2xl neu neu-press cursor-pointer text-foreground hover:text-primary transition-colors shadow-xs"
                 >
                   <Menu className="h-5 w-5" />
                 </button>
@@ -652,10 +652,10 @@ export default function PublicPortal() {
                     <button
                       onClick={() => { setActiveTab('orders'); setIsHamburgerOpen(false); }}
                       className={cn(
-                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer",
+                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer shadow-xs",
                         activeTab === 'orders' 
-                          ? "grad-styles text-white shadow-xs" 
-                          : "bg-muted/40 hover:bg-muted text-foreground border border-border/40"
+                          ? "grad-styles text-white shadow-md" 
+                          : "bg-white dark:bg-card hover:bg-muted/60 text-foreground border border-slate-200 dark:border-slate-800"
                       )}
                     >
                       <span className="flex items-center gap-3">
@@ -673,10 +673,10 @@ export default function PublicPortal() {
                     <button
                       onClick={() => { setActiveTab('appointments'); setIsHamburgerOpen(false); }}
                       className={cn(
-                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer",
+                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer shadow-xs",
                         activeTab === 'appointments' 
-                          ? "grad-styles text-white shadow-xs" 
-                          : "bg-muted/40 hover:bg-muted text-foreground border border-border/40"
+                          ? "grad-styles text-white shadow-md" 
+                          : "bg-white dark:bg-card hover:bg-muted/60 text-foreground border border-slate-200 dark:border-slate-800"
                       )}
                     >
                       <span className="flex items-center gap-3">
@@ -694,10 +694,10 @@ export default function PublicPortal() {
                     <button
                       onClick={() => { setActiveTab('profile'); setIsHamburgerOpen(false); }}
                       className={cn(
-                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer",
+                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer shadow-xs",
                         activeTab === 'profile' 
-                          ? "grad-styles text-white shadow-xs" 
-                          : "bg-muted/40 hover:bg-muted text-foreground border border-border/40"
+                          ? "grad-styles text-white shadow-md" 
+                          : "bg-white dark:bg-card hover:bg-muted/60 text-foreground border border-slate-200 dark:border-slate-800"
                       )}
                     >
                       <span className="flex items-center gap-3">
@@ -715,10 +715,10 @@ export default function PublicPortal() {
                     <button
                       onClick={() => { setActiveTab('director'); setIsHamburgerOpen(false); }}
                       className={cn(
-                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer",
+                        "w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold text-left transition-all cursor-pointer shadow-xs",
                         activeTab === 'director' 
-                          ? "grad-styles text-white shadow-xs" 
-                          : "bg-muted/40 hover:bg-muted text-foreground border border-border/40"
+                          ? "grad-styles text-white shadow-md" 
+                          : "bg-white dark:bg-card hover:bg-muted/60 text-foreground border border-slate-200 dark:border-slate-800"
                       )}
                     >
                       <span className="flex items-center gap-3">
@@ -760,7 +760,7 @@ export default function PublicPortal() {
       </header>
 
       {/* Main Container */}
-      <main className="mx-auto max-w-lg px-4 pt-3">
+      <main className="mx-auto max-w-lg px-4 pt-4">
         {/* TAB 1: STYLES SHOWCASE (Home) */}
         {activeTab === 'styles' && (
           <div className="space-y-4">
@@ -773,11 +773,11 @@ export default function PublicPortal() {
               return (
                 <div 
                   key={style.id} 
-                  className="rounded-[32px] p-4 bg-card/90 dark:bg-card border border-border/40 shadow-md space-y-3.5 hover:shadow-lg transition-all"
+                  className="rounded-[32px] p-4 bg-white dark:bg-card border border-slate-200/90 dark:border-slate-800/90 shadow-lg hover:shadow-xl transition-all space-y-3.5"
                 >
                   {/* Single Image or Combined Before & After Image Box Container */}
                   {isSingle ? (
-                    <div className="relative rounded-[22px] overflow-hidden bg-black/5 aspect-[4/3] sm:aspect-[16/11]">
+                    <div className="relative rounded-[22px] overflow-hidden bg-slate-900/5 dark:bg-black/20 aspect-[4/3] sm:aspect-[16/11] border border-slate-100 dark:border-slate-800">
                       <img 
                         src={style.afterImage || style.beforeImage} 
                         alt={style.title} 
@@ -785,7 +785,7 @@ export default function PublicPortal() {
                       />
                     </div>
                   ) : (
-                    <div className="relative rounded-[22px] overflow-hidden bg-black/5 aspect-[4/3] sm:aspect-[16/11] grid grid-cols-2 gap-1 p-1">
+                    <div className="relative rounded-[22px] overflow-hidden bg-slate-900/5 dark:bg-black/20 aspect-[4/3] sm:aspect-[16/11] grid grid-cols-2 gap-1 p-1 border border-slate-100 dark:border-slate-800">
                       <div className="relative h-full w-full overflow-hidden rounded-l-[18px]">
                         <img 
                           src={style.beforeImage} 
@@ -793,7 +793,7 @@ export default function PublicPortal() {
                           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
                         />
                         <div className="absolute bottom-3 inset-x-0 flex justify-center pointer-events-none">
-                          <span className="px-3.5 py-1 rounded-md bg-black/50 backdrop-blur-md text-[11px] font-serif text-white/95 shadow-sm tracking-wide">
+                          <span className="px-3.5 py-1 rounded-md bg-black/60 backdrop-blur-md text-[11px] font-serif text-white/95 shadow-sm tracking-wide">
                             Before
                           </span>
                         </div>
@@ -806,7 +806,7 @@ export default function PublicPortal() {
                           className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
                         />
                         <div className="absolute bottom-3 inset-x-0 flex justify-center pointer-events-none">
-                          <span className="px-3.5 py-1 rounded-md bg-black/50 backdrop-blur-md text-[11px] font-serif text-white/95 shadow-sm tracking-wide">
+                          <span className="px-3.5 py-1 rounded-md bg-black/60 backdrop-blur-md text-[11px] font-serif text-white/95 shadow-sm tracking-wide">
                             After
                           </span>
                         </div>
@@ -814,8 +814,11 @@ export default function PublicPortal() {
                     </div>
                   )}
 
+                  {/* Card Separator Line */}
+                  <div className="h-px bg-slate-100 dark:bg-slate-800 my-1" />
+
                   {/* Card Bottom Meta Info & Actions */}
-                  <div className="flex items-center justify-between pt-1 px-1">
+                  <div className="flex items-center justify-between pt-0.5 px-1">
                     <div>
                       <h3 className="text-base font-bold tracking-tight text-foreground">{style.title}</h3>
                       <p className="text-xs font-medium text-muted-foreground mt-0.5">
@@ -828,10 +831,10 @@ export default function PublicPortal() {
                         type="button"
                         onClick={() => toggleLikeStyle(style.id)}
                         className={cn(
-                          "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
+                          "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer shadow-xs",
                           isLiked 
                             ? "bg-rose-500/10 text-rose-600 border border-rose-500/30" 
-                            : "bg-accent/60 text-muted-foreground hover:bg-accent hover:text-foreground"
+                            : "bg-slate-100 dark:bg-accent/60 text-muted-foreground hover:bg-accent hover:text-foreground border border-slate-200/70 dark:border-slate-800"
                         )}
                       >
                         <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-rose-500 text-rose-500")} />
@@ -842,10 +845,10 @@ export default function PublicPortal() {
                         type="button"
                         onClick={() => toggleBookmarkStyle(style.id)}
                         className={cn(
-                          "grid h-9 w-9 place-items-center rounded-full text-xs transition-all cursor-pointer",
+                          "grid h-9 w-9 place-items-center rounded-full text-xs transition-all cursor-pointer shadow-xs",
                           isBookmarked 
                             ? "bg-primary/10 text-primary border border-primary/30" 
-                            : "bg-accent/60 text-muted-foreground hover:bg-accent hover:text-foreground"
+                            : "bg-slate-100 dark:bg-accent/60 text-muted-foreground hover:bg-accent hover:text-foreground border border-slate-200/70 dark:border-slate-800"
                         )}
                       >
                         <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-primary text-primary")} />
@@ -858,7 +861,7 @@ export default function PublicPortal() {
                           setBookingStep(1);
                           setActiveTab('booking');
                         }}
-                        className="rounded-full text-xs font-bold grad-styles text-white px-3.5 h-9 shadow-sm hover:opacity-95 cursor-pointer ml-1"
+                        className="rounded-full text-xs font-bold grad-styles text-white px-3.5 h-9 shadow-md hover:opacity-95 cursor-pointer ml-1"
                       >
                         Book
                       </Button>
@@ -1252,7 +1255,7 @@ export default function PublicPortal() {
                       setSelectedProduct(product);
                       setProductDetailQty(1);
                     }}
-                    className="rounded-[24px] p-3 neu space-y-2 flex flex-col justify-between cursor-pointer hover:scale-[1.01] transition-transform"
+                    className="rounded-[24px] p-3.5 bg-white dark:bg-card border border-slate-200/90 dark:border-slate-800 shadow-md hover:shadow-xl hover:scale-[1.02] space-y-2.5 flex flex-col justify-between cursor-pointer transition-all"
                   >
                     <div className="space-y-2">
                       <div className="relative rounded-2xl overflow-hidden aspect-square neu-sm">
@@ -1348,8 +1351,8 @@ export default function PublicPortal() {
                 }
 
                 return filteredOrders.map((order) => (
-                  <div key={order.id} className="rounded-[24px] p-4 neu space-y-2 text-xs">
-                    <div className="flex justify-between items-center border-b pb-2">
+                  <div key={order.id} className="rounded-[24px] p-4 bg-white dark:bg-card border border-slate-200/90 dark:border-slate-800 shadow-md space-y-2.5 text-xs">
+                    <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
                       <span className="font-bold text-foreground">Order #{order.orderNumber}</span>
                       <Badge className={cn(
                         "capitalize font-bold border-none",
@@ -1451,8 +1454,8 @@ export default function PublicPortal() {
                     .join(', ');
 
                   return (
-                    <div key={apt.id} className="rounded-[24px] p-4 neu space-y-2 text-xs">
-                      <div className="flex justify-between items-center border-b pb-2">
+                    <div key={apt.id} className="rounded-[24px] p-4 bg-white dark:bg-card border border-slate-200/90 dark:border-slate-800 shadow-md space-y-2.5 text-xs">
+                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
                         <span className="font-bold text-foreground flex items-center gap-1.5">
                           <Calendar className="h-3.5 w-3.5 text-primary" />
                           {apt.date} at {apt.time}
@@ -1990,7 +1993,7 @@ export default function PublicPortal() {
 
       {/* FIXED BOTTOM NAVIGATION BAR (LOVABLE 5-ITEM NEUMORPHIC NAV WITH 90% BLUR) */}
       <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-3 pointer-events-none">
-        <div className="mx-auto flex max-w-lg items-end justify-between rounded-[28px] bg-background/85 backdrop-blur-xl px-3 py-2 neu shadow-2xl border border-white/40 dark:border-white/10 pointer-events-auto">
+        <div className="mx-auto flex max-w-lg items-end justify-between rounded-[28px] bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl px-3 py-2 shadow-[0_10px_35px_rgba(15,23,42,0.15)] dark:shadow-[0_10px_35px_rgba(0,0,0,0.5)] border border-slate-200/90 dark:border-slate-800 pointer-events-auto">
           {/* Book */}
           <button
             onClick={() => {
